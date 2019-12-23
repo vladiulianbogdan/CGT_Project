@@ -1,2 +1,4 @@
-fetch the submodule
-    git submodule update --init
+fetch the submodule:
+```
+git submodule update --ini
+```
