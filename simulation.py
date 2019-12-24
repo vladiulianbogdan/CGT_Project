@@ -46,7 +46,7 @@ class Individual:
 
 class Population:
     """ represents a popualtion
-        TODO
+        TODO add Docstring
     """
     def __init__(self, populationSize, initializationFunction):
         self.initializationFunction = initializationFunction
@@ -65,7 +65,7 @@ class Population:
 
 class Game:
     """
-
+        TODO add Docstring
     """
     def __init__(self, population, groupSize, rounds, riskFunction, selectionFunction ,alphaPoor, alphaRich):
         self.population = population
@@ -111,10 +111,10 @@ class Game:
 
     def getActualContribution(self, individual, plannedContribution):
         """ checks how much the individual can actually contribute """
-        return (plannedContribution if individual.endowment) >= plannedContribution else individual.endowment
+        return plannedContribution if (individual.endowment >= plannedContribution) else individual.endowment
 
     def collectiveLoss(self, selection):
-        """" All member loss, ONLY SIDE EFFECT!
+        """" All member loss, ONLY SIDE EFFECTS!
 
         Collective loss happens to all individuals in the seleciton
         depending on their type!
@@ -143,7 +143,7 @@ class Game:
 
 
 def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, maxB, typeInd):
-    """" creates a random individual with given boundaries
+    """ creates a random individual with given boundaries
 
     Function initializes an Individual with given wealth. It selects uniformly a value
     values between the boundaries for the threshold, a and b.
@@ -168,7 +168,7 @@ def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, m
     return Individual(wealth, strategy, typeInd)
 
 def randomSelection(population, groupSize):
-    """" mock-function for random selection
+    """ mock-function for random selection
 
         Selects N (for N = groupSize) random individuals from the population with replacment.
 
@@ -183,13 +183,13 @@ def randomSelection(population, groupSize):
     return [rand.choice(population.population) for _ in range(0, groupSize)]
 
 def linearRiskCurve(selection, collectivePot, lambdaValue):
-    """""" Equation (1) page 7 of the paper
+    """ Equation (1) page 7 of the paper
 
     Returns:
         True, Loss is happening
         False, Loss is not happening
     """
-    w0 = sum()[individual.startingWealth for individual in selection])
+    w0 = sum([individual.startingWealth for individual in selection])
     probLoss = (1 - (collectivePot/w0)*lambdaValue)
     if rand.uniform(0,1) > probLoss:
         return False
@@ -208,22 +208,20 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
     # - rich / poor scenario
     # - fitness function
     # - risk function
-def runSimulation(generations, groupSize, popSize, numberOfGames, numberOfRounds, alphaPoor, alphaRich, lambdaValue, fitnessFunction, riskFunction):
-    # initialization
-    for generation in range(0, number_of_generations):
-        for game in range(o, n):
-            # select group of K random players
-            game = Game()
-
+def runSimulation(generations, groupSize, popSize, initFunction, numberOfGames, numberOfRounds, alphaPoor, alphaRich, lambdaValue, fitnessFunction, riskFunction):
+    population = Population(popSize, initFunction)
+    usedRiskFunction = lambda selection, collectivePot: riskFunction(selection, collectivePot, lambdaValue)
+    for generation in range(0, generations):
+        game = Game(population, groupSize, rounds, usedRiskFunction, selectionFunction ,alphaPoor, alphaRich)
+        for _ in range(0, numberOfGames):
             game.play()
-
-            # get money
-            for round in range(0, n):
-                # invest
-
-                # check for possibility of loss
-
-        # mutate the generation
+        # init child generation
+        # calculate averaged payoffs
+        # calculate fitness
+        # selection based on fitness
+            # mutate parent
+            # add to child generation
+            # repeat until popSize is reached
 
         # keep track of contribution
 
@@ -231,7 +229,6 @@ def runSimulation(generations, groupSize, popSize, numberOfGames, numberOfRounds
 if __name__ == "__main__":
     print("Running as main!")
     myInitFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False)
-    myLinearRiskCurve = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 0.5)
     pop = Population(100, myInitFunction)
     pop.createPopulation()
     pop.prettyPrintPopulation()
