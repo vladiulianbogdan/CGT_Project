@@ -73,6 +73,5 @@ for generation in range(0, number_of_generations):
     # keep track of contribution
 """
 
-strategyOne = np.array([[0.0,0.1,0.0], [0.2,0.1,0.5]])
-individual = Individual(1,strategyOne,False)
-print(individual)
+if __name__ == "__main__":
+    print("Running as main!")
