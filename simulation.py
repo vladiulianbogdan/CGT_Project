@@ -33,7 +33,7 @@ class Individual:
         self.startingWealth = endowment # should be immutable
         self.endowment = endowment
         self.strategy = strategy
-        self.type = individualType
+        self.individualType = individualType
         self.roundsPlayed = 0
         self.cumulatedPayoff = 0.0
 
@@ -149,10 +149,10 @@ class Game:
         # reset individuals and add payoff for this round
         for individual in selection:
             individual.roundsPlayed += 1
-            individual.cumulatedPayoff += indivdual.endowment
-            individual.endowment = indivdual.startingWealth
+            individual.cumulatedPayoff += individual.endowment
+            individual.endowment = individual.startingWealth
 
-def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, maxB, typeInd):
+def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, maxB, typeInd, numberOfRounds):
     """ creates a random individual with given boundaries
 
     Function initializes an Individual with given wealth. It selects uniformly a value
@@ -174,7 +174,12 @@ def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, m
     threshold = rand.uniform(minThreshold, maxThreshold)
     a = rand.uniform(minA, maxA)
     b = rand.uniform(minB, maxB)
-    strategy = np.array([threshold, a, b])
+    strategy = np.array([[threshold, a, b]])
+    for round in range(1, numberOfRounds):
+        threshold = rand.uniform(minThreshold, maxThreshold)
+        a = rand.uniform(minA, maxA)
+        b = rand.uniform(minB, maxB)
+        strategy = np.concatenate((strategy, np.array([[threshold, a, b]])), axis=0)
     return Individual(wealth, strategy, typeInd)
 
 def randomSelection(population, groupSize):
@@ -183,14 +188,17 @@ def randomSelection(population, groupSize):
         Selects N (for N = groupSize) random individuals from the population with replacment.
 
         Args:
-            population(Population): Population to select from, using the population fiel
+            population(Population or list[Individual.... Individual]): Population to select from, using the population fiel
             groupSize(int): number of individuals choosen
 
         Returns:
             Array: (Individual, ..., Individual)
 
     """
-    return [rand.choice(population.population) for _ in range(0, groupSize)]
+    if isinstance(population, Population):
+        return [rand.choice(population.population) for _ in range(0, groupSize)]
+    else:
+        return [rand.choice(population) for _ in range(0, groupSize)]
 
 def linearRiskCurve(selection, collectivePot, lambdaValue):
     """ Equation (1) page 7 of the paper
@@ -222,12 +230,13 @@ def simpleMutation(individual, mutationChance = 0.03):
     """
     if rand.uniform(0,1) <= mutationChance:
         strategy = individual.strategy
-        threshold_new = drawValueFromNormalDistribution(strategy[0])
-        a_new = drawValueFromNormalDistribution(strategy[1])
-        b_new = drawValueFromNormalDistribution(strategy[2])
-        return Individual(individual.endowment, np.array([threshold_new, a_new, b_new]), indivdual.typeInd)
+        threshold_new = drawValueFromNormalDistribution(strategy[:,0])
+        a_new = drawValueFromNormalDistribution(strategy[:,1])
+        b_new = drawValueFromNormalDistribution(strategy[:,2])
+        new_strategy = np.array([threshold_new, a_new, b_new]).transpose()
+        return Individual(individual.startingWealth, new_strategy, individual.individualType)
     else:
-        return indivdual
+        return individual
 
 
 #parameters:
@@ -263,9 +272,10 @@ def runSimulation(  generations, numberOfGames,
             game.play()
         child_population = Population(popSize, selectionFunctionPopulation, fitnessFunction )
         for _ in range(0, popSize):
-            individual = population.selectParent()
-            mutated_individual = mutationFunction( individual )
-            child_population.addIndividual( mutated_individual )
+            parents = population.selectParent()
+            for individual in parents:
+                mutated_individual = mutationFunction( individual )
+                child_population.addIndividual( mutated_individual )
         population = child_population
 
         # keep track of contribution
@@ -279,8 +289,8 @@ if __name__ == "__main__":
     groupSize = 2
     selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 50
-    initFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False)
-    mutationFunction = lambda indivdual: simpleMutation(individual, 0.04)
+    initFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False, numberOfRounds)
+    mutationFunction = lambda individual: simpleMutation(individual, 0.04)
     selectionFunctionPopulation = lambda pop, fitnessFunction: randomSelection(pop, 1)
     fitnessFunction = lambda fitness: fitness
     alphaPoor = 0.5
