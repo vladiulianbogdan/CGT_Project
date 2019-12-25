@@ -42,26 +42,31 @@ class Individual:
         return (self.cumulatedPayoff / self.roundsPlayed) if (self.roundsPlayed > 0) else 0
 
     def __repr__(self):
-        return "[Wealth = " + str(self.endowment) + "]"
+        return "[Wealth = " + str(self.endowment) + "]\n" + str(self.strategy)
 
 class Population:
     """ represents a popualtion
         TODO add Docstring
     """
-    def __init__(self, populationSize, initializationFunction):
-        self.initializationFunction = initializationFunction
+    def __init__(self, populationSize, selectionFunction, fitnessFunction):
+        self.selectionFunction = selectionFunction
+        self.fitnessFunction = fitnessFunction
         self.populationSize = populationSize
         self.population = []
 
-    def createPopulation(self):
-        for newIndividual in range(0, self.populationSize):
-            self.population.append(self.initializationFunction())
+    def addIndividual(self, individual):
+        # add option to concatenate array instead with automatical check
+        if (len(self.population) > self.populationSize):
+            raise Exception("Population exceeded bound, don't add more elements then allowed!")
+        self.population.append(individual)
+
+    def selectParent(self):
+        return self.selectionFunction ( self.population, self.fitnessFunction )
 
     def prettyPrintPopulation(self):
         print("Total size of popualtion: " + str(len(self.population)))
         for individual in self.population:
             print(individual)
-
 
 class Game:
     """
@@ -126,6 +131,7 @@ class Game:
                 individual.endowment *= self.alphaPoor
 
     def play(self):
+        """ Play one game with a certain amount of rounds """
         selection = self.select()
         collectivePot = 0
         for currentRound in range(0,self.rounds):
@@ -140,7 +146,11 @@ class Game:
             collectivePot += contributionThisRound
             if self.riskFunction(selection, collectivePot):
                 self.collectiveLoss(selection)
-
+        # reset individuals and add payoff for this round
+        for individual in selection:
+            individual.roundsPlayed += 1
+            individual.cumulatedPayoff += indivdual.endowment
+            individual.endowment = indivdual.startingWealth
 
 def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, maxB, typeInd):
     """ creates a random individual with given boundaries
@@ -196,6 +206,29 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
     else:
         return True
 
+def drawValueFromNormalDistribution(mean, sigma = 0.15):
+    """  Draws a random value from a distribution """
+    return np.random.normal(mean, sigma)
+
+def simpleMutation(individual, mutationChance = 0.03):
+    """ Mutates an indivdual with a certain chance
+
+    Args:
+        individual(Individual): individual to mutate if the case
+        mutationChance(float): low value, default 3% chance of mutationChance
+
+    Results:
+        Individual: either the one give, or a mutated version of that one
+    """
+    if rand.uniform(0,1) <= mutationChance:
+        strategy = individual.strategy
+        threshold_new = drawValueFromNormalDistribution(strategy[0])
+        a_new = drawValueFromNormalDistribution(strategy[1])
+        b_new = drawValueFromNormalDistribution(strategy[2])
+        return Individual(individual.endowment, np.array([threshold_new, a_new, b_new]), indivdual.typeInd)
+    else:
+        return indivdual
+
 
 #parameters:
     # - group size
@@ -208,27 +241,52 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
     # - rich / poor scenario
     # - fitness function
     # - risk function
-def runSimulation(generations, groupSize, popSize, initFunction, numberOfGames, numberOfRounds, alphaPoor, alphaRich, lambdaValue, fitnessFunction, riskFunction):
-    population = Population(popSize, initFunction)
-    usedRiskFunction = lambda selection, collectivePot: riskFunction(selection, collectivePot, lambdaValue)
+def runSimulation(  generations, numberOfGames,
+                    numberOfRounds, groupSize, selectionFunctionGame,
+                    popSize, initFunction, mutationFunction, selectionFunctionPopulation, fitnessFunction,
+                    alphaPoor, alphaRich, riskFunction):
+    """
+    Args:
+        first-line: Simulation parameter
+        second-line: game parameter
+        third-line: population parameter
+        fourth-line individual parameter
+    """
+    population = Population(popSize, selectionFunctionPopulation, fitnessFunction)
+    for _ in range(0, popSize):
+        individual = initFunction()
+        population.addIndividual( individual )
+    population.prettyPrintPopulation()
     for generation in range(0, generations):
-        game = Game(population, groupSize, rounds, usedRiskFunction, selectionFunction ,alphaPoor, alphaRich)
+        game = Game(population, groupSize, numberOfRounds, riskFunction, selectionFunctionGame ,alphaPoor, alphaRich)
         for _ in range(0, numberOfGames):
             game.play()
-        # init child generation
-        # calculate averaged payoffs
-        # calculate fitness
-        # selection based on fitness
-            # mutate parent
-            # add to child generation
-            # repeat until popSize is reached
+        child_population = Population(popSize, selectionFunctionPopulation, fitnessFunction )
+        for _ in range(0, popSize):
+            individual = population.selectParent()
+            mutated_individual = mutationFunction( individual )
+            child_population.addIndividual( mutated_individual )
+        population = child_population
 
         # keep track of contribution
 
 
 if __name__ == "__main__":
     print("Running as main!")
-    myInitFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False)
-    pop = Population(100, myInitFunction)
-    pop.createPopulation()
-    pop.prettyPrintPopulation()
+    generations = 100
+    numberOfGames = 1000
+    numberOfRounds = 2
+    groupSize = 2
+    selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
+    popSize = 50
+    initFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False)
+    mutationFunction = lambda indivdual: simpleMutation(individual, 0.04)
+    selectionFunctionPopulation = lambda pop, fitnessFunction: randomSelection(pop, 1)
+    fitnessFunction = lambda fitness: fitness
+    alphaPoor = 0.5
+    alphaRich = 0.5
+    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 0.5)
+    runSimulation(  generations, numberOfGames, \
+                    numberOfRounds, groupSize, selectionFunctionGame, \
+                    popSize, initFunction, mutationFunction, selectionFunctionPopulation, fitnessFunction, \
+                    alphaPoor, alphaRich, riskFunction)
