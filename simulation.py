@@ -12,6 +12,9 @@
 
 # allocate random strategies to all players
 # allocate initial amount of money
+"""
+TODO-list is above runSimulation! :)
+"""
 
 import numpy as np
 import random as rand
@@ -20,6 +23,7 @@ class Individual:
     """A single individual with the information it has in the system
 
     Attributes:
+        startingWealth(float): needed to reset the wealth and also to calculate the risk curve
         endowment(float): the current wealth of the individual
         strategy(np.array(tau, a, b)): the strategy set of the individual
             tau(float): threshold
@@ -46,7 +50,13 @@ class Individual:
 
 class Population:
     """ represents a popualtion
-        TODO add Docstring
+
+        Attributes:
+            - selectionFunction(function(population, fitnessFunction) => [Individual, ... Individual] ): Returns a number of individuals given a population
+            - fitnessFunction(function => fitnessvalue): A function that can access all members of the population class, should be used to evaluate fitnessvalue
+                                                        together with the selectionFunction
+            - populationSize(Int): number of individuals in the population
+            - population([Individual, ...., Individual]): all individuals
     """
     def __init__(self, populationSize, selectionFunction, fitnessFunction):
         self.selectionFunction = selectionFunction
@@ -131,7 +141,13 @@ class Game:
                 individual.endowment *= self.alphaPoor
 
     def play(self):
-        """ Play one game with a certain amount of rounds """
+        """ Play one game with a certain amount of rounds
+
+        Outline:
+            - select a number of individuals specified in self.groupSize => selection
+            - play a number of rounds with this group
+            - at the end of each round we call the risk function, if a loss happens
+        """
         selection = self.select()
         collectivePot = 0
         for currentRound in range(0,self.rounds):
@@ -169,7 +185,7 @@ def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, m
         type(boolean): poor = False, rich = True
 
     Result:
-        Individual: a individual
+        Individual: a Individual
     """
     threshold = rand.uniform(minThreshold, maxThreshold)
     a = rand.uniform(minA, maxA)
@@ -238,6 +254,22 @@ def simpleMutation(individual, mutationChance = 0.03):
     else:
         return individual
 
+"""
+
+New functions below here:
+    TODO
+    - Wrigth-Fisher selection step: selectionFunctionPopulation(Population, fitnessFunction) => [Individual, ..., Individual]
+            Now I am using just a random selection
+    - FitnessFunction: somehow this on is tied with the wright-fisher process
+            Now no fitness function is used for breeding the next generation
+    - Inititalization (lambda popSize, numberOfRounds => Individual): give the simulation a executable lambda to initialize this one
+            How are my strategies set in the beginning?
+    - add other risk-curves
+    - testing of the implementation
+    - how to save our simulation / save the results?
+    - split project into several files?
+"""
+
 
 #parameters:
     # - group size
@@ -256,16 +288,22 @@ def runSimulation(  generations, numberOfGames,
                     alphaPoor, alphaRich, riskFunction):
     """
     Args:
-        first-line: Simulation parameter
+        first-line: simulation parameter
         second-line: game parameter
         third-line: population parameter
         fourth-line individual parameter
+
+    Result:
+        ToBeAdded
     """
+    # Initialization
     population = Population(popSize, selectionFunctionPopulation, fitnessFunction)
     for _ in range(0, popSize):
-        individual = initFunction()
+        individual = initFunction(numberOfRounds)
         population.addIndividual( individual )
     population.prettyPrintPopulation()
+
+    # Outline of the process
     for generation in range(0, generations):
         game = Game(population, groupSize, numberOfRounds, riskFunction, selectionFunctionGame ,alphaPoor, alphaRich)
         for _ in range(0, numberOfGames):
@@ -278,7 +316,7 @@ def runSimulation(  generations, numberOfGames,
                 child_population.addIndividual( mutated_individual )
         population = child_population
 
-        # keep track of contribution
+        # TODO keep track of contribution / save something of the simulation
 
 
 if __name__ == "__main__":
@@ -289,8 +327,8 @@ if __name__ == "__main__":
     groupSize = 2
     selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 50
-    initFunction = lambda: randomInitialization(1, 0, 1, 0, 1, 0, 1, False, numberOfRounds)
-    mutationFunction = lambda individual: simpleMutation(individual, 0.04)
+    initFunction = lambda rounds: randomInitialization(1, 0, 0.5, 0, 0.5, 0, 0.5, False, rounds)
+    mutationFunction = lambda individual: simpleMutation(individual, 0.03)
     selectionFunctionPopulation = lambda pop, fitnessFunction: randomSelection(pop, 1)
     fitnessFunction = lambda fitness: fitness
     alphaPoor = 0.5
