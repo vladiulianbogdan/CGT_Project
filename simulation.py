@@ -18,6 +18,14 @@ TODO-list is above runSimulation! :)
 
 import numpy as np
 import random as rand
+import enum
+
+# Using enum class create enumerations
+class RiskInRound(enum.Enum):
+   EveryRound = 1
+   FirstRound = 2
+   LastRound = 3
+   RandomRound = 4
 
 class Individual:
     """A single individual with the information it has in the system
@@ -77,11 +85,13 @@ class Population:
 class Game:
     """
         TODO add Docstring
+        risk in round: 
     """
-    def __init__(self, population, groupSize, rounds, riskFunction, selectionFunction ,alphaPoor, alphaRich):
+    def __init__(self, population, groupSize, rounds, riskFunction, riskInRound, selectionFunction ,alphaPoor, alphaRich):
         self.population = population
         self.rounds = rounds
         self.groupSize = groupSize
+        self.riskInRound = riskInRound
         self.riskFunction = riskFunction
         self.selectionFunction = selectionFunction
         self.alphaPoor = alphaPoor
@@ -132,6 +142,8 @@ class Game:
         """
         selection = self.select()
         collectivePot = 0
+
+        randomRound = rand.uniform(0, self.rounds)
         for currentRound in range(0,self.rounds):
             contributionThisRound = 0
             for individual in selection:
@@ -139,7 +151,16 @@ class Game:
                 individual.endowment -= contribution
                 contributionThisRound += contribution
             collectivePot += contributionThisRound
-            if self.riskFunction(selection, collectivePot):
+
+            if (
+                (
+                (self.riskInRound == RiskInRound.FirstRound and currentRound == 0) or
+                (self.riskInRound == RiskInRound.LastRound and currentRound == self.rounds) or
+                (self.riskInRound == RiskInRound.EveryRound) or
+                (self.riskInRound == RiskInRound.RandomRound and currentRound == randomRound)
+                ) and
+                self.riskFunction(selection, collectivePot)
+               ):
                 self.collectiveLoss(selection)
 
         # reset individuals and add payoff for this round
@@ -210,12 +231,6 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
     else:
         return True
 
-def riskFunctionInRound(selection, collectivePot, currentRound, roundType):
-    if (roundType == "FirstRound" && currrentRound != 1):
-        return False
-    if (roundType == "LastRound" && currentRouund != LastRound):
-        return False
-
 def drawValueFromNormalDistribution(mean, sigma = 0.15):
     """  Draws a random value from a distribution """
     return np.random.normal(mean, sigma)
@@ -271,7 +286,7 @@ New functions below here:
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize, selectionFunctionGame,
                     popSize, initFunction,
-                    alphaPoor, alphaRich, riskFunction):
+                    alphaPoor, alphaRich, riskFunction, riskInRound):
     """
     Args:
         first-line: simulation parameter
@@ -291,7 +306,7 @@ def runSimulation(  generations, numberOfGames,
 
     # Outline of the process
     for _ in range(0, generations):
-        game = Game(population, groupSize, numberOfRounds, riskFunction, selectionFunctionGame ,alphaPoor, alphaRich)
+        game = Game(population, groupSize, numberOfRounds, riskFunction, riskInRound, selectionFunctionGame ,alphaPoor, alphaRich)
         for _ in range(0, numberOfGames):
             game.play()
 
@@ -350,4 +365,4 @@ if __name__ == "__main__":
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, selectionFunctionGame, \
                     popSize, initFunction, \
-                    alphaPoor, alphaRich, riskFunction)
+                    alphaPoor, alphaRich, riskFunction, RiskInRound.FirstRound)
