@@ -210,6 +210,12 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
     else:
         return True
 
+def riskFunctionInRound(selection, collectivePot, currentRound, roundType):
+    if (roundType == "FirstRound" && currrentRound != 1):
+        return False
+    if (roundType == "LastRound" && currentRouund != LastRound):
+        return False
+
 def drawValueFromNormalDistribution(mean, sigma = 0.15):
     """  Draws a random value from a distribution """
     return np.random.normal(mean, sigma)
@@ -308,7 +314,7 @@ def wrightFisher(population):
         frequencies.append(frequencies[-1] + frequency)
 
     for i in range(0, population.populationSize):
-        number = rand.uniform(0, 1) 
+        number = rand.uniform(0, 1)
 
         for j in range(0, population.populationSize):
             if (number < frequencies[j]):
