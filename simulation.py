@@ -38,12 +38,13 @@ class Individual:
         self.endowment = endowment
         self.strategy = strategy
         self.individualType = individualType
-        self.roundsPlayed = 0
+        self.gamesPlayed = 0
         self.cumulatedPayoff = 0.0
 
-    def getPayoff(self):
+    # TODO add selection intensity
+    def getFitness(self):
         """ Get the averaged payoff of this indivdual """
-        return (self.cumulatedPayoff / self.roundsPlayed) if (self.roundsPlayed > 0) else 0
+        return (self.cumulatedPayoff / self.gamesPlayed) if (self.gamesPlayed > 0) else 0
 
     def __repr__(self):
         return "[Wealth = " + str(self.endowment) + "]\n" + str(self.strategy)
@@ -58,9 +59,7 @@ class Population:
             - populationSize(Int): number of individuals in the population
             - population([Individual, ...., Individual]): all individuals
     """
-    def __init__(self, populationSize, selectionFunction, fitnessFunction):
-        self.selectionFunction = selectionFunction
-        self.fitnessFunction = fitnessFunction
+    def __init__(self, populationSize):
         self.populationSize = populationSize
         self.population = []
 
@@ -69,9 +68,6 @@ class Population:
         if (len(self.population) > self.populationSize):
             raise Exception("Population exceeded bound, don't add more elements then allowed!")
         self.population.append(individual)
-
-    def selectParent(self):
-        return self.selectionFunction ( self.population, self.fitnessFunction )
 
     def prettyPrintPopulation(self):
         print("Total size of popualtion: " + str(len(self.population)))
@@ -95,7 +91,7 @@ class Game:
         """ use the given selection function to get an amount of indivduals equal to the groupSize """
         return self.selectionFunction( self.population,  self.groupSize )
 
-    def isContributing(self, currentStrategy, collectivePot):
+    def contribution(self, individual, currentRound, collectivePot):
         """ Checking for the strategy (tau; a, b)
 
         Select the threshold from the strategy the individual uses this round
@@ -108,25 +104,11 @@ class Game:
                 Boolean: Returns True if a should be selected.
                 Otherwise b should be selected
         """
+        currentStrategy = individual.strategy[currentRound]
         threshold = currentStrategy[0]
-        return True if collectivePot <= threshold else False
+        contribution = currentStrategy[1] if collectivePot <= threshold else currentStrategy[2]
 
-    def chooseContribution(self, currentStrategy, choice):
-        """ returns this indiduals contribution value
-
-        Args:
-            currentStrategy(np.array): strategy array as described in the paper page 6/7
-            choice(boolean): Depending on the boolean delivered from isContributing
-
-        Result:
-            Float: for True we choose currentStrategy[1] which equals a
-            otherwise we choose currentStrategy[2] which equals b
-        """
-        return currentStrategy[1] if choice else currentStrategy[2]
-
-    def getActualContribution(self, individual, plannedContribution):
-        """ checks how much the individual can actually contribute """
-        return plannedContribution if (individual.endowment >= plannedContribution) else individual.endowment
+        return contribution if (individual.endowment >= contribution) else individual.endowment
 
     def collectiveLoss(self, selection):
         """" All member loss, ONLY SIDE EFFECTS!
@@ -153,18 +135,16 @@ class Game:
         for currentRound in range(0,self.rounds):
             contributionThisRound = 0
             for individual in selection:
-                currentStrategy = individual.strategy[currentRound]
-                choice = self.isContributing(currentStrategy, collectivePot)
-                plannedContribution = self.chooseContribution(currentStrategy, choice)
-                actualContribution = self.getActualContribution(individual, plannedContribution)
-                individual.endowment -= actualContribution
-                contributionThisRound += actualContribution
+                contribution = self.contribution(individual, currentRound, collectivePot)
+                individual.endowment -= contribution
+                contributionThisRound += contribution
             collectivePot += contributionThisRound
             if self.riskFunction(selection, collectivePot):
                 self.collectiveLoss(selection)
+
         # reset individuals and add payoff for this round
         for individual in selection:
-            individual.roundsPlayed += 1
+            individual.gamesPlayed += 1
             individual.cumulatedPayoff += individual.endowment
             individual.endowment = individual.startingWealth
 
@@ -234,7 +214,7 @@ def drawValueFromNormalDistribution(mean, sigma = 0.15):
     """  Draws a random value from a distribution """
     return np.random.normal(mean, sigma)
 
-def simpleMutation(individual, mutationChance = 0.03):
+def simpleMutation(individual, mutationChance = 0.05):
     """ Mutates an indivdual with a certain chance
 
     Args:
@@ -284,7 +264,7 @@ New functions below here:
     # - risk function
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize, selectionFunctionGame,
-                    popSize, initFunction, mutationFunction, selectionFunctionPopulation, fitnessFunction,
+                    popSize, initFunction,
                     alphaPoor, alphaRich, riskFunction):
     """
     Args:
@@ -297,26 +277,56 @@ def runSimulation(  generations, numberOfGames,
         ToBeAdded
     """
     # Initialization
-    population = Population(popSize, selectionFunctionPopulation, fitnessFunction)
+    population = Population(popSize)
     for _ in range(0, popSize):
         individual = initFunction(numberOfRounds)
         population.addIndividual( individual )
     population.prettyPrintPopulation()
 
     # Outline of the process
-    for generation in range(0, generations):
+    for _ in range(0, generations):
         game = Game(population, groupSize, numberOfRounds, riskFunction, selectionFunctionGame ,alphaPoor, alphaRich)
         for _ in range(0, numberOfGames):
             game.play()
-        child_population = Population(popSize, selectionFunctionPopulation, fitnessFunction )
-        for _ in range(0, popSize):
-            parents = population.selectParent()
-            for individual in parents:
-                mutated_individual = mutationFunction( individual )
-                child_population.addIndividual( mutated_individual )
-        population = child_population
+
+        population = wrightFisher(population)
+        population = mutation(population)
 
         # TODO keep track of contribution / save something of the simulation
+
+def wrightFisher(population):
+    total = 0
+    newPopulation = Population(population.populationSize)
+
+    for individual in population.population:
+        total += individual.getFitness()
+
+    frequencies = [population.population[0].getFitness() / total]
+
+    for i in range(1, population.populationSize):
+        frequency = population.population[i].getFitness() / total
+        frequencies.append(frequencies[-1] + frequency)
+
+    for i in range(0, population.populationSize):
+        number = rand.uniform(0, 1) 
+
+        for j in range(0, population.populationSize):
+            if (number < frequencies[j]):
+                ind = Individual(
+                    population.population[j].endowment,
+                    population.population[j].strategy,
+                    population.population[j].individualType
+                )
+                newPopulation.addIndividual(ind)
+                break
+
+    return newPopulation
+
+def mutation(population):
+    individualIndex = int(rand.uniform(0, population.populationSize - 1))
+    population.population[individualIndex] = simpleMutation(population.population[individualIndex])
+
+    return population
 
 
 if __name__ == "__main__":
@@ -328,13 +338,10 @@ if __name__ == "__main__":
     selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 50
     initFunction = lambda rounds: randomInitialization(1, 0, 0.5, 0, 0.5, 0, 0.5, False, rounds)
-    mutationFunction = lambda individual: simpleMutation(individual, 0.03)
-    selectionFunctionPopulation = lambda pop, fitnessFunction: randomSelection(pop, 1)
-    fitnessFunction = lambda fitness: fitness
     alphaPoor = 0.5
     alphaRich = 0.5
     riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 0.5)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, selectionFunctionGame, \
-                    popSize, initFunction, mutationFunction, selectionFunctionPopulation, fitnessFunction, \
+                    popSize, initFunction, \
                     alphaPoor, alphaRich, riskFunction)
