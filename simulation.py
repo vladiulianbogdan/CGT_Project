@@ -374,6 +374,9 @@ def runSimulation(  generations, numberOfGames,
         for _ in range(0, numberOfGames):
             game.play()
 
+        population = wrightFisher(population)
+        population = mutation(population)
+
         averagedContributionsPerRoundRich = game.contributionsPerRoundRich / (groupSize * numberOfGames)
         averagedContributionsPerRoundPoor = game.contributionsPerRoundPoor / (groupSize * numberOfGames)
 
