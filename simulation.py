@@ -19,6 +19,7 @@ TODO-list is above runSimulation! :)
 import numpy as np
 import random as rand
 import enum
+import math
 from datetime import datetime
 
 # Using enum class create enumerations
@@ -62,10 +63,10 @@ class Individual:
     # TODO add selection intensity
     def getFitness(self):
         """ Get the averaged payoff of this indivdual """
-        return (self.cumulatedPayoff / self.gamesPlayed) if (self.gamesPlayed > 0) else 0
+        return math.exp(self.cumulatedPayoff / self.gamesPlayed) if (self.gamesPlayed > 0) else 0
 
     def __repr__(self):
-        return "[Wealth = " + str(self.endowment) + "]\n" + str(self.strategy)
+        return "[fitness = " + str(self.getFitness()) + "]\n" + "[endowment = " + str(self.endowment) + "]\n" + str(self.strategy)
 
 class Population:
     """ represents a popualtion
@@ -253,7 +254,7 @@ def drawValueFromNormalDistribution(mean, sigma = 0.15):
 
     return np.random.normal(mean, sigma)
 
-def simpleMutation(individual, mutationChance = 0.05):
+def simpleMutation(individual, mutationChance = 0.03):
     """ Mutates an indivdual with a certain chance
 
     Args:
@@ -269,9 +270,18 @@ def simpleMutation(individual, mutationChance = 0.05):
         a_new = drawValueFromNormalDistribution(strategy[:,1])
         b_new = drawValueFromNormalDistribution(strategy[:,2])
 
-        a_new[a_new < 0] = 0
-        b_new[b_new < 0] = 0
-        threshold_new[threshold_new < 0] = 0
+        # if there is only one strategy, the a_new will not be a list
+        if len(strategy) > 1:
+            a_new[a_new < 0] = 0.0
+            b_new[b_new < 0] = 0.0
+            threshold_new[threshold_new < 0] = 0
+        else:
+            if a_new < 0:
+                a_new = 0
+            if b_new < 0:
+                b_new = 0
+            if threshold_new < 0:
+                threshold_new = 0
 
         new_strategy = np.array([threshold_new, a_new, b_new]).transpose()
         return Individual(individual.startingWealth, new_strategy, individual.individualType)
@@ -364,7 +374,7 @@ def runSimulation(  generations, numberOfGames,
         else:
             individual = randomInitialization(wealthRich, True, numberOfRounds)
         population.addIndividual( individual )
-    population.prettyPrintPopulation()
+        # population.prettyPrintPopulation()
 
     writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
 
@@ -411,7 +421,7 @@ def wrightFisher(population):
     return newPopulation
 
 def mutation(population):
-    individualIndex = int(rand.uniform(0, population.populationSize - 1))
+    individualIndex = int(rand.uniform(0, population.populationSize))
     population.population[individualIndex] = simpleMutation(population.population[individualIndex])
 
     return population
@@ -419,7 +429,7 @@ def mutation(population):
 
 if __name__ == "__main__":
     print("Running as main!")
-    generations = 100
+    generations = 2
     numberOfGames = 1000
     numberOfRounds = 2
     groupSize = 2
@@ -441,3 +451,4 @@ if __name__ == "__main__":
                     numberOfRounds, groupSize, selectionFunctionGame, \
                     popSize, 
                     alphaPoor, alphaRich, riskFunction, RiskInRound.FirstRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
+
