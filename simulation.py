@@ -27,6 +27,12 @@ class RiskInRound(enum.Enum):
    LastRound = 3
    RandomRound = 4
 
+class RiskCurve(enum.Enum):
+   Linear = 1
+   PieceWiseLinear = 2
+   PowerFunction = 3
+   Curves = 4
+
 class Individual:
     """A single individual with the information it has in the system
 
@@ -96,6 +102,7 @@ class Game:
         self.selectionFunction = selectionFunction
         self.alphaPoor = alphaPoor
         self.alphaRich = alphaRich
+        self.contributionsPerRound = np.zeros(rounds)
 
     def select(self):
         """ use the given selection function to get an amount of indivduals equal to the groupSize """
@@ -150,6 +157,8 @@ class Game:
                 contribution = self.contribution(individual, currentRound, collectivePot)
                 individual.endowment -= contribution
                 contributionThisRound += contribution
+
+                self.contributionsPerRound[currentRound] += contribution
             collectivePot += contributionThisRound
 
             if (
@@ -169,7 +178,7 @@ class Game:
             individual.cumulatedPayoff += individual.endowment
             individual.endowment = individual.startingWealth
 
-def randomInitialization(wealth, minThreshold, maxThreshold, minA, maxA, minB, maxB, typeInd, numberOfRounds):
+def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThreshold=0.5, minA=0, maxA=0.5, minB=0, maxB=0.5):
     """ creates a random individual with given boundaries
 
     Function initializes an Individual with given wealth. It selects uniformly a value
@@ -233,6 +242,7 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
 
 def drawValueFromNormalDistribution(mean, sigma = 0.15):
     """  Draws a random value from a distribution """
+
     return np.random.normal(mean, sigma)
 
 def simpleMutation(individual, mutationChance = 0.05):
@@ -250,6 +260,11 @@ def simpleMutation(individual, mutationChance = 0.05):
         threshold_new = drawValueFromNormalDistribution(strategy[:,0])
         a_new = drawValueFromNormalDistribution(strategy[:,1])
         b_new = drawValueFromNormalDistribution(strategy[:,2])
+
+        a_new[a_new < 0] = 0
+        b_new[b_new < 0] = 0
+        threshold_new[threshold_new < 0] = 0
+
         new_strategy = np.array([threshold_new, a_new, b_new]).transpose()
         return Individual(individual.startingWealth, new_strategy, individual.individualType)
     else:
@@ -285,8 +300,7 @@ New functions below here:
     # - risk function
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize, selectionFunctionGame,
-                    popSize, initFunction,
-                    alphaPoor, alphaRich, riskFunction, riskInRound):
+                    popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve):
     """
     Args:
         first-line: simulation parameter
@@ -300,9 +314,26 @@ def runSimulation(  generations, numberOfGames,
     # Initialization
     population = Population(popSize)
     for _ in range(0, popSize):
-        individual = initFunction(numberOfRounds)
+        individual = randomInitialization(wealthRich, True, numberOfRounds)
         population.addIndividual( individual )
     population.prettyPrintPopulation()
+
+    file.write("%d\n" % heterogeneous)
+    file.write("%d\n" % popSize) # population size
+    if heterogeneous == True:
+        file.write("%d\n" % wealthRich) # initial endowment
+    else:
+        file.write("%d\n" % wealthRich) # initial endowment
+        file.write("%d\n" % wealthPoor) # initial endowment
+    file.write("%d\n" % numberOfRounds) # number of rounds
+    file.write("%d\n" % typeOfRiskCurve.value) # type of risk curve
+
+    if heterogeneous == True:
+        file.write("%d\n" % alphaRich)
+    else:
+        file.write("%d\n" % alphaRich)
+        file.write("%d\n" % alphaPoor)
+    file.write("%f\n" % 0.5) # lambda value
 
     # Outline of the process
     for _ in range(0, generations):
@@ -310,8 +341,11 @@ def runSimulation(  generations, numberOfGames,
         for _ in range(0, numberOfGames):
             game.play()
 
-        population = wrightFisher(population)
-        population = mutation(population)
+        averagedContributionsPerRound = game.contributionsPerRound / (groupSize * numberOfGames)
+
+        for contribution in averagedContributionsPerRound:
+            file.write("%f " % contribution)
+        file.write("\n")
 
         # TODO keep track of contribution / save something of the simulation
 
@@ -358,11 +392,19 @@ if __name__ == "__main__":
     groupSize = 2
     selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 50
-    initFunction = lambda rounds: randomInitialization(1, 0, 0.5, 0, 0.5, 0, 0.5, False, rounds)
+    # initFunction = lambda rounds: randomInitialization(1, 0, 0.5, 0, 0.5, 0, 0.5, False, rounds)
     alphaPoor = 0.5
     alphaRich = 0.5
+    wealthPoor = 1
+    wealthRich = 1
+    typeOfRiskCurve = RiskCurve.Linear
+
+    heterogeneous = True
+
+    file = open("simulation.dat", "w+")
+
     riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 0.5)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, selectionFunctionGame, \
-                    popSize, initFunction, \
-                    alphaPoor, alphaRich, riskFunction, RiskInRound.FirstRound)
+                    popSize, 
+                    alphaPoor, alphaRich, riskFunction, RiskInRound.FirstRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
