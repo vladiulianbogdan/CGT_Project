@@ -55,6 +55,9 @@ class Individual:
         self.gamesPlayed = 0
         self.cumulatedPayoff = 0.0
 
+    def isRich(self):
+        return self.individualType == True
+
     # TODO add selection intensity
     def getFitness(self):
         """ Get the averaged payoff of this indivdual """
@@ -102,7 +105,8 @@ class Game:
         self.selectionFunction = selectionFunction
         self.alphaPoor = alphaPoor
         self.alphaRich = alphaRich
-        self.contributionsPerRound = np.zeros(rounds)
+        self.contributionsPerRoundRich = np.zeros(rounds)
+        self.contributionsPerRoundPoor = np.zeros(rounds)
 
     def select(self):
         """ use the given selection function to get an amount of indivduals equal to the groupSize """
@@ -158,7 +162,10 @@ class Game:
                 individual.endowment -= contribution
                 contributionThisRound += contribution
 
-                self.contributionsPerRound[currentRound] += contribution
+                if individual.isRich() == True:
+                    self.contributionsPerRoundRich[currentRound] += contribution
+                elif individual.isRich() == False:
+                    self.contributionsPerRoundPoor[currentRound] += contribution
             collectivePot += contributionThisRound
 
             if (
@@ -314,7 +321,14 @@ def runSimulation(  generations, numberOfGames,
     # Initialization
     population = Population(popSize)
     for _ in range(0, popSize):
-        individual = randomInitialization(wealthRich, True, numberOfRounds)
+        if heterogeneous == True:
+            decission = rand.uniform(0, 100)
+            if decission < 50:
+                individual = randomInitialization(wealthRich, True, numberOfRounds)
+            else:
+                individual = randomInitialization(wealthPoor, False, numberOfRounds)
+        else:
+            individual = randomInitialization(wealthRich, True, numberOfRounds)
         population.addIndividual( individual )
     population.prettyPrintPopulation()
 
@@ -341,11 +355,22 @@ def runSimulation(  generations, numberOfGames,
         for _ in range(0, numberOfGames):
             game.play()
 
-        averagedContributionsPerRound = game.contributionsPerRound / (groupSize * numberOfGames)
+        averagedContributionsPerRoundRich = game.contributionsPerRoundRich / (groupSize * numberOfGames)
+        averagedContributionsPerRoundPoor = game.contributionsPerRoundPoor / (groupSize * numberOfGames)
 
-        for contribution in averagedContributionsPerRound:
-            file.write("%f " % contribution)
-        file.write("\n")
+        if heterogeneous == True:
+            file.write("r ")
+            for contribution in averagedContributionsPerRoundRich:
+                file.write("%f " % contribution)
+            file.write("\n")
+            file.write("p ")
+            for contribution in averagedContributionsPerRoundPoor:
+                file.write("%f " % contribution)
+            file.write("\n")
+        else:
+            for contribution in averagedContributionsPerRoundRich:
+                file.write("%f " % contribution)
+            file.write("\n")
 
 def wrightFisher(population):
     total = 0
@@ -397,7 +422,7 @@ if __name__ == "__main__":
     wealthRich = 1
     typeOfRiskCurve = RiskCurve.Linear
 
-    heterogeneous = True
+    heterogeneous = False
 
     file = open("simulation.dat", "w+")
 
