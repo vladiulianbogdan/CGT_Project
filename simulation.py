@@ -19,6 +19,7 @@ TODO-list is above runSimulation! :)
 import numpy as np
 import random as rand
 import enum
+from datetime import datetime
 
 # Using enum class create enumerations
 class RiskInRound(enum.Enum):
@@ -424,7 +425,7 @@ if __name__ == "__main__":
 
     heterogeneous = False
 
-    file = open("simulation.dat", "w+")
+    file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 0.5)
     runSimulation(  generations, numberOfGames, \
