@@ -320,7 +320,7 @@ def runSimulation(  generations, numberOfGames,
 
     file.write("%d\n" % heterogeneous)
     file.write("%d\n" % popSize) # population size
-    if heterogeneous == True:
+    if heterogeneous == False:
         file.write("%d\n" % wealthRich) # initial endowment
     else:
         file.write("%d\n" % wealthRich) # initial endowment
@@ -328,7 +328,7 @@ def runSimulation(  generations, numberOfGames,
     file.write("%d\n" % numberOfRounds) # number of rounds
     file.write("%d\n" % typeOfRiskCurve.value) # type of risk curve
 
-    if heterogeneous == True:
+    if heterogeneous == False:
         file.write("%d\n" % alphaRich)
     else:
         file.write("%d\n" % alphaRich)
