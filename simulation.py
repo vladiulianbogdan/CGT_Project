@@ -44,7 +44,7 @@ class Individual:
     # TODO add selection intensity
     def getFitness(self):
         """ Get the averaged payoff of this indivdual """
-        return (self.cumulatedPayoff / self.gamesPlayed) if (self.roundsPlayed > 0) else 0
+        return (self.cumulatedPayoff / self.gamesPlayed) if (self.gamesPlayed > 0) else 0
 
     def __repr__(self):
         return "[Wealth = " + str(self.endowment) + "]\n" + str(self.strategy)
