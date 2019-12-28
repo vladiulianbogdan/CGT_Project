@@ -294,7 +294,38 @@ New functions below here:
     - split project into several files?
 """
 
+def writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor):
+    file.write("%d\n" % heterogeneous)
+    file.write("%d\n" % popSize) # population size
+    if heterogeneous == False:
+        file.write("%d\n" % wealthRich) # initial endowment
+    else:
+        file.write("%d\n" % wealthRich) # initial endowment
+        file.write("%d\n" % wealthPoor) # initial endowment
+    file.write("%d\n" % numberOfRounds) # number of rounds
+    file.write("%d\n" % typeOfRiskCurve.value) # type of risk curve
 
+    if heterogeneous == False:
+        file.write("%d\n" % alphaRich)
+    else:
+        file.write("%d\n" % alphaRich)
+        file.write("%d\n" % alphaPoor)
+    file.write("%f\n" % 0.5) # lambda value
+
+def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor):
+    if heterogeneous == True:
+        file.write("r ")
+        for contribution in averagedContributionsPerRoundRich:
+            file.write("%f " % contribution)
+        file.write("\n")
+        file.write("p ")
+        for contribution in averagedContributionsPerRoundPoor:
+            file.write("%f " % contribution)
+        file.write("\n")
+    else:
+        for contribution in averagedContributionsPerRoundRich:
+            file.write("%f " % contribution)
+        file.write("\n")
 #parameters:
     # - group size
     # - number of generations
@@ -309,6 +340,8 @@ New functions below here:
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize, selectionFunctionGame,
                     popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve):
+
+                    
     """
     Args:
         first-line: simulation parameter
@@ -333,22 +366,7 @@ def runSimulation(  generations, numberOfGames,
         population.addIndividual( individual )
     population.prettyPrintPopulation()
 
-    file.write("%d\n" % heterogeneous)
-    file.write("%d\n" % popSize) # population size
-    if heterogeneous == False:
-        file.write("%d\n" % wealthRich) # initial endowment
-    else:
-        file.write("%d\n" % wealthRich) # initial endowment
-        file.write("%d\n" % wealthPoor) # initial endowment
-    file.write("%d\n" % numberOfRounds) # number of rounds
-    file.write("%d\n" % typeOfRiskCurve.value) # type of risk curve
-
-    if heterogeneous == False:
-        file.write("%d\n" % alphaRich)
-    else:
-        file.write("%d\n" % alphaRich)
-        file.write("%d\n" % alphaPoor)
-    file.write("%f\n" % 0.5) # lambda value
+    writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
 
     # Outline of the process
     for _ in range(0, generations):
@@ -359,19 +377,7 @@ def runSimulation(  generations, numberOfGames,
         averagedContributionsPerRoundRich = game.contributionsPerRoundRich / (groupSize * numberOfGames)
         averagedContributionsPerRoundPoor = game.contributionsPerRoundPoor / (groupSize * numberOfGames)
 
-        if heterogeneous == True:
-            file.write("r ")
-            for contribution in averagedContributionsPerRoundRich:
-                file.write("%f " % contribution)
-            file.write("\n")
-            file.write("p ")
-            for contribution in averagedContributionsPerRoundPoor:
-                file.write("%f " % contribution)
-            file.write("\n")
-        else:
-            for contribution in averagedContributionsPerRoundRich:
-                file.write("%f " % contribution)
-            file.write("\n")
+        writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor)
 
 def wrightFisher(population):
     total = 0
@@ -416,7 +422,7 @@ if __name__ == "__main__":
     groupSize = 2
     selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 50
-    # initFunction = lambda rounds: randomInitialization(1, 0, 0.5, 0, 0.5, 0, 0.5, False, rounds)
+
     alphaPoor = 0.5
     alphaRich = 0.5
     wealthPoor = 1
