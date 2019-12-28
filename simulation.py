@@ -38,13 +38,13 @@ class Individual:
         self.endowment = endowment
         self.strategy = strategy
         self.individualType = individualType
-        self.roundsPlayed = 0
+        self.gamesPlayed = 0
         self.cumulatedPayoff = 0.0
 
     # TODO add selection intensity
     def getFitness(self):
         """ Get the averaged payoff of this indivdual """
-        return (self.cumulatedPayoff / self.roundsPlayed) if (self.roundsPlayed > 0) else 0
+        return (self.cumulatedPayoff / self.gamesPlayed) if (self.roundsPlayed > 0) else 0
 
     def __repr__(self):
         return "[Wealth = " + str(self.endowment) + "]\n" + str(self.strategy)
@@ -144,7 +144,7 @@ class Game:
 
         # reset individuals and add payoff for this round
         for individual in selection:
-            individual.roundsPlayed += 1
+            individual.gamesPlayed += 1
             individual.cumulatedPayoff += individual.endowment
             individual.endowment = individual.startingWealth
 
