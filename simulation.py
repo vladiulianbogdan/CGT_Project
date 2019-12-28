@@ -347,8 +347,6 @@ def runSimulation(  generations, numberOfGames,
             file.write("%f " % contribution)
         file.write("\n")
 
-        # TODO keep track of contribution / save something of the simulation
-
 def wrightFisher(population):
     total = 0
     newPopulation = Population(population.populationSize)
