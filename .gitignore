@@ -2,3 +2,5 @@
 *.out
 *.dat
 .vscode
+.ipynb_checkpoints/
+__pycache__/
