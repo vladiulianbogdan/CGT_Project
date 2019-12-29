@@ -77,26 +77,30 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
                 
     return contribution
 
-def readHeader(filename,heterogeneous):
+def readHeader(filename):
     """ Extract header information return this in a dictionary"""
     # Start with empty dictionary
     Header = {}
     with open(filename) as file: # Go over each line one by one and add it to the dictionary
-        Header["heterogeneous"] = bool(file.readline())
+        Header["heterogeneous"] = bool(int(file.readline()))
         Header["popSize"] = int(file.readline())
-        if heterogeneous==False:
+        
+        if Header["heterogeneous"]==False:
             Header["wealthRich"] = float(file.readline())
         else:
             Header["wealthRich"] = float(file.readline())
             Header["wealthPoor"] = float(file.readline())
+            
         Header["numberOfRounds"] = int(file.readline())
-        Header["numberOfRounds"] = int(file.readline())
-        if heterogeneous==False:
+        
+        if Header["heterogeneous"]==False:
             Header["alphaRich"] = float(file.readline())
         else: 
             Header["alphaRich"] = float(file.readline())
             Header["alphaPoor"] = float(file.readline())
+            
         Header["lambda"] = float(file.readline())
+        
     return Header
 
 def readSummary(filename, heterogeneous):
@@ -130,6 +134,9 @@ def readSummary(filename, heterogeneous):
     return summary
 
 def plotContributionVsGeneration(contributionArray):
+    """ This was just a quick function to plot the contribution level. 
+        Only accepts homogeneous !
+    """
     rounds = contributionArray.shape[-1]
     fig = plt.figure(figsize=(10,5),dpi=100)
     for r in range(0,rounds):
@@ -140,6 +147,7 @@ def plotContributionVsGeneration(contributionArray):
     plt.title("Average Contribution over time",fontsize=18)
     plt.legend()
     #plt.savefig("Contribution")
+
     return fig
 
 
@@ -148,6 +156,7 @@ def plotContributionVsGeneration(contributionArray):
 if __name__ == "__main__":
 
 	filename= "TestSimulation.dat"
-	contributionArray=readContributionFileToData(filename,False,4)
+	header = readHeader(filename = filename, heterogeneous = False)
+	contributionArray=readContributionFileToData(filename,False,header[numberOfRounds])
 	fig = plotContributionVsGeneration(contributionArray)
 
