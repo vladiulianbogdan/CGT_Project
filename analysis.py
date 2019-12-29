@@ -76,6 +76,36 @@ def readHeader(filename,heterogeneous):
         Header["lambda"] = float(file.readline())
     return Header
 
+def readSummary(filename, heterogeneous):
+    """ Read the summary of a file and return it in a dictionary"""
+    lenFile = file_len(filename)
+    if heterogeneous:
+        lenSummary = 3
+    else: # homogeneous
+        lenSummary = 2
+    
+    summary = {}
+    # Sadly I don't know an easy way to just start at the end of a file.
+    countSummaryLines = 0 # Have a counter that keeps track which summary line we are evaluating
+    with open(filename) as file:
+        for i, line in enumerate(file):
+            if i<(lenFile-lenSummary):
+                continue
+                
+            if i==lenFile-1: # Remove last newline character from the list line else the np.fromstring doesn't work
+                line=line[:-2]
+            
+            if countSummaryLines==0:
+                summary["AverageContribution"] = float(line)
+            elif countSummaryLines==1:
+                summary["AverageContributionPerRoundRich"] = np.fromstring(line,sep=" ")
+            elif heterogeneous and countSummaryLines==2:
+                summary["AverageContributionPerRoundPoor"] = np.fromstring(line,sep=" ")
+            
+            countSummaryLines+=1
+    
+    return summary
+
 def plotContributionVsGeneration(contributionArray):
     rounds = contributionArray.shape[-1]
     fig = plt.figure(figsize=(10,5),dpi=100)
