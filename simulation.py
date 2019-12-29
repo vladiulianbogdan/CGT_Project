@@ -475,12 +475,12 @@ if __name__ == "__main__":
     popSize = 100
 
     alphaPoor = 0.8
-    alphaRich = 0.8
+    alphaRich = 0.5
     wealthPoor = 1
-    wealthRich = 1
+    wealthRich = 4
     typeOfRiskCurve = RiskCurve.Linear
 
-    heterogeneous = False
+    heterogeneous = True
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
