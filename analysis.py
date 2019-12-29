@@ -54,6 +54,28 @@ def readContributionFileToData(fileName, heterogeneous, rounds, linesHeader=7, l
                 
         return contribution
 
+def readHeader(filename,heterogeneous):
+    """ Extract header information return this in a dictionary"""
+    # Start with empty dictionary
+    Header = {}
+    with open(filename) as file: # Go over each line one by one and add it to the dictionary
+        Header["heterogeneous"] = bool(file.readline())
+        Header["popSize"] = int(file.readline())
+        if heterogeneous==False:
+            Header["wealthRich"] = float(file.readline())
+        else:
+            Header["wealthRich"] = float(file.readline())
+            Header["wealthPoor"] = float(file.readline())
+        Header["numberOfRounds"] = int(file.readline())
+        Header["numberOfRounds"] = int(file.readline())
+        if heterogeneous==False:
+            Header["alphaRich"] = float(file.readline())
+        else: 
+            Header["alphaRich"] = float(file.readline())
+            Header["alphaPoor"] = float(file.readline())
+        Header["lambda"] = float(file.readline())
+    return Header
+
 def plotContributionVsGeneration(contributionArray):
     rounds = contributionArray.shape[-1]
     fig = plt.figure(figsize=(10,5),dpi=100)
@@ -66,6 +88,8 @@ def plotContributionVsGeneration(contributionArray):
     plt.legend()
     #plt.savefig("Contribution")
     return fig
+
+
 
 
 if __name__ == "__main__":
