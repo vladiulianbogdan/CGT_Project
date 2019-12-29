@@ -15,15 +15,13 @@ def file_len(fname):
             pass
     return i + 1
 
-def readContributionFileToData(fileName, heterogeneous, rounds, linesHeader=7, linesSummary=2, numGenerations=None):
+def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=None):
     """ Read the contributions per generation of a file
         
         Attributes:
             - fileName(str): String of the file name/path
             - heterogeneous(bool): Tells if the data is heterogeneous
             - rounds(int): Number of rounds
-            - linesHeader(int): Number of header lines of the file
-            - linesSummary(int): Number of summary lines at the end of the file.
             - numGenerations(int): Number of generations. Default is None, then it is manually calculated based on the file length
         
         Returns a multidimensional numpy array with the average contribution level:
@@ -33,15 +31,40 @@ def readContributionFileToData(fileName, heterogeneous, rounds, linesHeader=7, l
     lenfile = file_len(fileName)
     
     if heterogeneous:
-        # Not implemented yet because the format of the heterogenous case might change.
-        print("heterogeneous not implemented yet")
         
-    else: # Is homogeneous. In this case the contributions are just individual 
+        linesHeader = 9
+        linesSummary = 3
         
-        if numGenerations is None: # If number of generations not specified construct it from the file length
-            numGenerations = lenfile - linesHeader - linesSummary
+        if numGenerations is None:
+            linesGenerations = lenfile - linesHeader -linesSummary
+            numGenerations = int(linesGenerations/linesPerGeneration)
             
-        # init contribution
+        contribution = np.empty(shape = (numGenerations,2,rounds))
+        
+        with open(fileName) as file:
+            for i, line in enumerate(file):
+                if i < linesHeader:
+                    continue
+                if i >= lenfile - linesSummary:
+                    continue
+                
+                lineWealthType = (i-linesHeader)%linesPerGeneration # 0 = Rich, 1=Poor
+                generation = (i-linesHeader)//linesPerGeneration
+                
+                if lineWealthType==0:# Rich
+                    contribution[generation,0] = np.fromstring(line[2:],sep=" ") # remove the first two characters
+                else: # Poor
+                    contribution[generation,1] = np.fromstring(line[2:],sep=" ")
+        
+        
+    else: # Is homogeneous. In this case the contributions are just individual
+        
+        linesHeader = 7
+        linesSummary = 2
+        
+        if numGenerations is None:
+            numGenerations = lenfile - linesHeader -linesSummary
+        
         contribution = np.empty(shape=(numGenerations,rounds))
         
         with open(fileName) as file:
@@ -52,7 +75,7 @@ def readContributionFileToData(fileName, heterogeneous, rounds, linesHeader=7, l
                     continue
                 contribution[i-linesHeader] = np.fromstring(line,sep=" ")
                 
-        return contribution
+    return contribution
 
 def readHeader(filename,heterogeneous):
     """ Extract header information return this in a dictionary"""
