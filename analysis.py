@@ -34,6 +34,7 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
         
         linesHeader = 9
         linesSummary = 3
+        linesPerGeneration = 2
         
         if numGenerations is None:
             linesGenerations = lenfile - linesHeader -linesSummary
@@ -92,6 +93,7 @@ def readHeader(filename):
             Header["wealthPoor"] = float(file.readline())
             
         Header["numberOfRounds"] = int(file.readline())
+        Header["typeOfRiskCurve"] = int(file.readline())
         
         if Header["heterogeneous"]==False:
             Header["alphaRich"] = float(file.readline())
@@ -114,11 +116,11 @@ def readSummary(filename, heterogeneous):
     summary = {}
     # Sadly I don't know an easy way to just start at the end of a file.
     countSummaryLines = 0 # Have a counter that keeps track which summary line we are evaluating
+
     with open(filename) as file:
         for i, line in enumerate(file):
             if i<(lenFile-lenSummary):
                 continue
-                
             if i==lenFile-1: # Remove last newline character from the list line else the np.fromstring doesn't work
                 line=line[:-2]
             
@@ -133,21 +135,30 @@ def readSummary(filename, heterogeneous):
     
     return summary
 
-def plotContributionVsGeneration(contributionArray):
-    """ This was just a quick function to plot the contribution level. 
-        Only accepts homogeneous !
+def plotContributionVsGeneration(contributionArray,plotRich=True):
+    """ Plot contribution versus itteration
+        plotRich = True the rich are plot else the poor are plot
+        
     """
+    isHetero = len(contributionArray.shape)==3 # boolian that tells if it is heterogenous. 
+    if isHetero:
+        IndexWealthType = 0 if plotRich else 1
+    
     rounds = contributionArray.shape[-1]
     fig = plt.figure(figsize=(10,5),dpi=100)
+    
     for r in range(0,rounds):
-        plt.plot(contributionArray[:,r],label=f"round={r+1}")
+        if isHetero:# Is hetrogenious
+            plt.plot(contributionArray[:,IndexWealthType,r],label=f"round={r+1}")
+        else:
+            plt.plot(contributionArray[:,r],label=f"round={r+1}")
     
     plt.xlabel("iteration",fontsize=15)
     plt.ylabel("Contribution",fontsize=15)
     plt.title("Average Contribution over time",fontsize=18)
     plt.legend()
     #plt.savefig("Contribution")
-
+    
     return fig
 
 
