@@ -80,15 +80,33 @@ class Population:
             - populationSize(Int): number of individuals in the population
             - population([Individual, ...., Individual]): all individuals
     """
-    def __init__(self, populationSize):
-        self.populationSize = populationSize
-        self.population = []
+    def __init__(self, populationSize, richPopulation=[], poorPopulation=[]):
+        if len(richPopulation) != 0 or len(poorPopulation) !=0:
+            self.populationSize = len(richPopulation) + len(poorPopulation)
+        else:
+            self.populationSize = populationSize
+        self.population = richPopulation + poorPopulation
+        self.richPopulation = richPopulation
+        self.poorPopulation = poorPopulation
 
     def addIndividual(self, individual):
         # add option to concatenate array instead with automatical check
         if (len(self.population) > self.populationSize):
             raise Exception("Population exceeded bound, don't add more elements then allowed!")
         self.population.append(individual)
+
+        if (individual.individualType == True):
+            self.richPopulation.append(individual)
+        else:
+            self.poorPopulation.append(individual)
+
+    def modifyIndividual(self, index, newIndividual):
+        self.population[index] = newIndividual
+        if index >= len(self.richPopulation):
+            self.poorPopulation[index - len(self.richPopulation)] = newIndividual
+        else:
+            self.richPopulation[index] = newIndividual
+            
 
     def prettyPrintPopulation(self):
         print("Total size of popualtion: " + str(len(self.population)))
@@ -100,21 +118,21 @@ class Game:
         TODO add Docstring
         risk in round:
     """
-    def __init__(self, population, groupSize, rounds, riskFunction, riskInRound, selectionFunction ,alphaPoor, alphaRich):
+    def __init__(self, population, groupSize, rounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous):
         self.population = population
         self.rounds = rounds
         self.groupSize = groupSize
         self.riskInRound = riskInRound
         self.riskFunction = riskFunction
-        self.selectionFunction = selectionFunction
         self.alphaPoor = alphaPoor
         self.alphaRich = alphaRich
         self.contributionsPerRoundRich = np.zeros(rounds)
         self.contributionsPerRoundPoor = np.zeros(rounds)
+        self.heterogeneous = heterogeneous
 
     def select(self):
         """ use the given selection function to get an amount of indivduals equal to the groupSize """
-        return self.selectionFunction( self.population,  self.groupSize )
+        return randomSelection(self.population,  self.groupSize, self.heterogeneous)
 
     def contribution(self, individual, currentRound, collectivePot):
         """ Checking for the strategy (tau; a, b)
@@ -169,7 +187,7 @@ class Game:
 
                 if individual.isRich() == True:
                     self.contributionsPerRoundRich[currentRound] += contribution
-                elif individual.isRich() == False:
+                else:
                     self.contributionsPerRoundPoor[currentRound] += contribution
             collectivePot += contributionThisRound
 
@@ -220,7 +238,7 @@ def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThr
         strategy = np.concatenate((strategy, np.array([[threshold, a, b]])), axis=0)
     return Individual(wealth, strategy, typeInd)
 
-def randomSelection(population, groupSize):
+def randomSelection(population, groupSize, heterogeneous):
     """ mock-function for random selection
 
         Selects N (for N = groupSize) random individuals from the population with replacment.
@@ -233,10 +251,12 @@ def randomSelection(population, groupSize):
             Array: (Individual, ..., Individual)
 
     """
-    if isinstance(population, Population):
+    if heterogeneous == False:
         return [rand.choice(population.population) for _ in range(0, groupSize)]
     else:
-        return [rand.choice(population) for _ in range(0, groupSize)]
+        richPopulation = [rand.choice(population.richPopulation) for _ in range(0, groupSize)]
+        poorPopulation = [rand.choice(population.poorPopulation) for _ in range(0, groupSize)]
+        return richPopulation + poorPopulation
 
 def linearRiskCurve(selection, collectivePot, lambdaValue):
     """ Equation (1) page 7 of the paper
@@ -275,7 +295,7 @@ def drawValueFromNormalDistribution(mean, sigma = 0.15):
 
     return np.random.normal(mean, sigma)
 
-def simpleMutation(individual, mutationChance = 0.03):
+def simpleMutation(individual, mutationChance = 1):
     """ Mutates an indivdual with a certain chance
 
     Args:
@@ -306,7 +326,6 @@ def simpleMutation(individual, mutationChance = 0.03):
                 threshold_new = 0
 
             new_strategy = np.array([[threshold_new, a_new, b_new]])
-
         return Individual(individual.startingWealth, new_strategy, individual.individualType)
     else:
         return individual
@@ -343,7 +362,7 @@ def writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, 
     else:
         file.write("%f\n" % alphaRich)
         file.write("%f\n" % alphaPoor)
-    file.write("%f\n" % 1) # lambda value
+    file.write("%f\n" % globalLambdaValue) # lambda value
 
 def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor):
     if heterogeneous == True:
@@ -371,7 +390,7 @@ def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRou
     # - fitness function
     # - risk function
 def runSimulation(  generations, numberOfGames,
-                    numberOfRounds, groupSize, selectionFunctionGame,
+                    numberOfRounds, groupSize,
                     popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve):
 
 
@@ -386,18 +405,22 @@ def runSimulation(  generations, numberOfGames,
         ToBeAdded
     """
     # Initialization
-    population = Population(popSize)
+
+    if (heterogeneous == False):
+        population = Population(popSize)
+    else:
+        population = Population(2*popSize)
+
     for _ in range(0, popSize):
-        if heterogeneous == True:
-            decission = rand.uniform(0, 100)
-            if decission < 50:
-                individual = randomInitialization(wealthRich, True, numberOfRounds)
-            else:
-                individual = randomInitialization(wealthPoor, False, numberOfRounds)
-        else:
-            individual = randomInitialization(wealthRich, True, numberOfRounds)
+        individual = randomInitialization(wealthRich, True, numberOfRounds)
         population.addIndividual(individual)
         population.prettyPrintPopulation()
+
+    if (heterogeneous == True):
+        for _ in range(0, popSize):
+            individual = randomInitialization(wealthRich, False, numberOfRounds)
+            population.addIndividual(individual)
+            population.prettyPrintPopulation()
 
     writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
 
@@ -409,7 +432,7 @@ def runSimulation(  generations, numberOfGames,
 
     # Outline of the process
     for _ in range(0, generations):
-        game = Game(population, groupSize, numberOfRounds, riskFunction, riskInRound, selectionFunctionGame ,alphaPoor, alphaRich)
+        game = Game(population, groupSize, numberOfRounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous)
         for _ in range(0, numberOfGames):
             game.play()
 
@@ -420,7 +443,9 @@ def runSimulation(  generations, numberOfGames,
             else:
                 totalAveragedContribution += 1
 
-        population = wrightFisher(population)
+        richPopulation = wrightFisher(population.richPopulation)
+        poorPopulation = wrightFisher(population.poorPopulation)
+        population = Population(population.populationSize, richPopulation, poorPopulation)
         population = mutation(population)
 
         # Add all contributions in order to make the average contribution over all generations for each round
@@ -447,30 +472,30 @@ def runSimulation(  generations, numberOfGames,
             file.write("%f " % c)
         file.write("\n")
 
-def wrightFisher(population):
+def wrightFisher(populationArray):
     total = 0
-    newPopulation = Population(population.populationSize)
+    newPopulation = []
 
-    for individual in population.population:
+    for individual in populationArray:
         total += individual.getFitness()
 
-    frequencies = [population.population[0].getFitness() / total]
+    frequencies = [populationArray[0].getFitness() / total]
 
-    for i in range(1, population.populationSize):
-        frequency = population.population[i].getFitness() / total
+    for i in range(1, len(populationArray)):
+        frequency = populationArray[i].getFitness() / total
         frequencies.append(frequencies[-1] + frequency)
 
-    for i in range(0, population.populationSize):
+    for i in range(0, len(populationArray)):
         number = rand.uniform(0, 1)
 
-        for j in range(0, population.populationSize):
+        for j in range(0, len(populationArray)):
             if (number < frequencies[j]):
                 ind = Individual(
-                    population.population[j].endowment,
-                    population.population[j].strategy,
-                    population.population[j].individualType
+                    populationArray[j].endowment,
+                    populationArray[j].strategy,
+                    populationArray[j].individualType
                 )
-                newPopulation.addIndividual(ind)
+                newPopulation.append(ind)
                 break
 
     return newPopulation
@@ -478,10 +503,11 @@ def wrightFisher(population):
 def mutation(population):
     individualIndex = int(rand.uniform(0, population.populationSize))
     # for individualIndex in range(0, population.populationSize):
-    population.population[individualIndex] = simpleMutation(population.population[individualIndex])
+    population.modifyIndividual(individualIndex, simpleMutation(population.population[individualIndex]))
 
     return population
 
+globalLambdaValue = 1
 
 if __name__ == "__main__":
     print("Running as main!")
@@ -489,7 +515,6 @@ if __name__ == "__main__":
     numberOfGames = 1000
     numberOfRounds = 4
     groupSize = 2
-    selectionFunctionGame = lambda pop, groupSize: randomSelection(pop, groupSize)
     popSize = 100
 
     alphaPoor = 0.8
@@ -503,10 +528,10 @@ if __name__ == "__main__":
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     # The three different risk curves with given lambda values
-    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 1)
-    #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, 1)
-    #riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, 1)
+    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
+    #riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     runSimulation(  generations, numberOfGames, \
-                    numberOfRounds, groupSize, selectionFunctionGame, \
+                    numberOfRounds, groupSize, \
                     popSize,
                     alphaPoor, alphaRich, riskFunction, RiskInRound.EveryRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
