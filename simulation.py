@@ -194,7 +194,7 @@ class Game:
             if (
                 (
                 (self.riskInRound == RiskInRound.FirstRound and currentRound == 0) or
-                (self.riskInRound == RiskInRound.LastRound and currentRound == self.rounds) or
+                (self.riskInRound == RiskInRound.LastRound and currentRound == self.rounds - 1) or
                 (self.riskInRound == RiskInRound.EveryRound) or
                 (self.riskInRound == RiskInRound.RandomRound and currentRound == randomRound)
                 ) and
