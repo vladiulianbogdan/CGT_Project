@@ -295,7 +295,7 @@ def drawValueFromNormalDistribution(mean, sigma = 0.15):
 
     return np.random.normal(mean, sigma)
 
-def simpleMutation(individual, mutationChance = 1):
+def simpleMutation(individual, mutationChance = 0.03):
     """ Mutates an indivdual with a certain chance
 
     Args:
