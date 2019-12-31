@@ -437,11 +437,14 @@ def runSimulation(  generations, numberOfGames,
             game.play()
 
         # Compute total average contribution over all rounds, games and generations
+        totalAverageThisGeneration = 0
+        individualsThatPlayedThisGeneration = 0
         for individual in population.population:
             if individual.gamesPlayed != 0:
-                totalAveragedContribution += individual.totalContribution / individual.gamesPlayed
-            else:
-                totalAveragedContribution += 1
+                totalAverageThisGeneration += individual.totalContribution / individual.gamesPlayed
+                individualsThatPlayedThisGeneration += 1
+
+        totalAveragedContribution += (totalAverageThisGeneration/individualsThatPlayedThisGeneration)
 
         richPopulation = wrightFisher(population.richPopulation)
         poorPopulation = wrightFisher(population.poorPopulation)
@@ -461,7 +464,7 @@ def runSimulation(  generations, numberOfGames,
     totalAveragedContributionsPerRoundRich /= (groupSize * numberOfGames * generations)
     totalAveragedContributionsPerRoundPoor /= (groupSize * numberOfGames * generations)
 
-    file.write("%f\n" % (totalAveragedContribution / (popSize * generations)))
+    file.write("%f\n" % (totalAveragedContribution / generations))
 
     for c in totalAveragedContributionsPerRoundRich:
         file.write("%f " % c)
