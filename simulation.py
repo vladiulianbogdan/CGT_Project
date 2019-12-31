@@ -502,7 +502,7 @@ def wrightFisher(populationArray):
 
 def mutation(population):
     individualIndex = int(rand.uniform(0, population.populationSize))
-    # for individualIndex in range(0, population.populationSize):
+    #for individualIndex in range(0, population.populationSize):
     population.modifyIndividual(individualIndex, simpleMutation(population.population[individualIndex]))
 
     return population
