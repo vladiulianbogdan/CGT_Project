@@ -452,7 +452,7 @@ def runSimulation(  generations, numberOfGames,
         population = mutation(population)
 
         # Add all contributions in order to make the average contribution over all generations for each round
-        for i in range(0, numberOfRounds-1):
+        for i in range(0, numberOfRounds):
             totalAveragedContributionsPerRoundRich[i] += game.contributionsPerRoundRich[i]
             totalAveragedContributionsPerRoundPoor[i] += game.contributionsPerRoundPoor[i]
 
