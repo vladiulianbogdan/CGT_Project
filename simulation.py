@@ -412,13 +412,13 @@ def runSimulation(  generations, numberOfGames,
         population = Population(2*popSize)
 
     for _ in range(0, popSize):
-        individual = randomInitialization(wealthRich, True, numberOfRounds)
+        individual = randomInitialization(wealthRich, True, numberOfRounds, 0, 1, 0, wealthRich, 0, wealthRich)
         population.addIndividual(individual)
         population.prettyPrintPopulation()
 
     if (heterogeneous == True):
         for _ in range(0, popSize):
-            individual = randomInitialization(wealthRich, False, numberOfRounds)
+            individual = randomInitialization(wealthPoor, False, numberOfRounds, 0, 1, 0, wealthPoor, 0, wealthPoor)
             population.addIndividual(individual)
             population.prettyPrintPopulation()
 
@@ -507,7 +507,7 @@ def mutation(population):
 
     return population
 
-globalLambdaValue = 1
+globalLambdaValue = 10
 
 if __name__ == "__main__":
     print("Running as main!")
@@ -517,8 +517,8 @@ if __name__ == "__main__":
     groupSize = 2
     popSize = 100
 
-    alphaPoor = 0.8
-    alphaRich = 0.5
+    alphaPoor = 1
+    alphaRich = 1
     wealthPoor = 1
     wealthRich = 4
     typeOfRiskCurve = RiskCurve.Linear
@@ -528,10 +528,10 @@ if __name__ == "__main__":
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     # The three different risk curves with given lambda values
-    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    # riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
     #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
-    #riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
+    riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
                     popSize,
-                    alphaPoor, alphaRich, riskFunction, RiskInRound.EveryRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
+                    alphaPoor, alphaRich, riskFunction, RiskInRound.LastRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
