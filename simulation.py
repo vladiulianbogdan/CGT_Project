@@ -177,6 +177,7 @@ class Game:
         collectivePot = 0
 
         randomRound = rand.uniform(0, self.rounds)
+
         for currentRound in range(0,self.rounds):
             contributionThisRound = 0
             for individual in selection:
@@ -196,7 +197,7 @@ class Game:
                 (self.riskInRound == RiskInRound.FirstRound and currentRound == 0) or
                 (self.riskInRound == RiskInRound.LastRound and currentRound == self.rounds - 1) or
                 (self.riskInRound == RiskInRound.EveryRound) or
-                (self.riskInRound == RiskInRound.RandomRound and currentRound == randomRound)
+                (self.riskInRound == RiskInRound.RandomRound and currentRound == int(randomRound))
                 ) and
                 self.riskFunction(selection, collectivePot)
                ):
@@ -300,7 +301,7 @@ def simpleMutation(individual, mutationChance = 0.01):
 
     Args:
         individual(Individual): individual to mutate if the case
-        mutationChance(float): low value, default 3% chance of mutationChance
+        mutationChance(float): low value, default 1% chance of mutationChance
 
     Results:
         Individual: either the one give, or a mutated version of that one
@@ -414,13 +415,11 @@ def runSimulation(  generations, numberOfGames,
     for _ in range(0, popSize):
         individual = randomInitialization(wealthRich, True, numberOfRounds, 0, 1, 0, wealthRich, 0, wealthRich)
         population.addIndividual(individual)
-        population.prettyPrintPopulation()
 
     if (heterogeneous == True):
         for _ in range(0, popSize):
             individual = randomInitialization(wealthPoor, False, numberOfRounds, 0, 1, 0, wealthPoor, 0, wealthPoor)
             population.addIndividual(individual)
-            population.prettyPrintPopulation()
 
     writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
 
@@ -492,7 +491,7 @@ def wrightFisher(populationArray):
         number = rand.uniform(0, 1)
 
         for j in range(0, len(populationArray)):
-            if (number < frequencies[j]):
+            if (number <= frequencies[j]):
                 ind = Individual(
                     populationArray[j].endowment,
                     populationArray[j].strategy,
