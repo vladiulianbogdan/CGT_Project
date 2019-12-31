@@ -295,7 +295,7 @@ def drawValueFromNormalDistribution(mean, sigma = 0.15):
 
     return np.random.normal(mean, sigma)
 
-def simpleMutation(individual, mutationChance = 0.03):
+def simpleMutation(individual, mutationChance = 0.01):
     """ Mutates an indivdual with a certain chance
 
     Args:
@@ -501,9 +501,9 @@ def wrightFisher(populationArray):
     return newPopulation
 
 def mutation(population):
-    individualIndex = int(rand.uniform(0, population.populationSize))
-    #for individualIndex in range(0, population.populationSize):
-    population.modifyIndividual(individualIndex, simpleMutation(population.population[individualIndex]))
+    #individualIndex = int(rand.uniform(0, population.populationSize))
+    for individualIndex in range(0, population.populationSize):
+        population.modifyIndividual(individualIndex, simpleMutation(population.population[individualIndex]))
 
     return population
 
