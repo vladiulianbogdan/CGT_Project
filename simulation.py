@@ -98,7 +98,7 @@ class Population:
 class Game:
     """
         TODO add Docstring
-        risk in round: 
+        risk in round:
     """
     def __init__(self, population, groupSize, rounds, riskFunction, riskInRound, selectionFunction ,alphaPoor, alphaRich):
         self.population = population
@@ -246,7 +246,25 @@ def linearRiskCurve(selection, collectivePot, lambdaValue):
         False, Loss is not happening
     """
     w0 = sum([individual.startingWealth for individual in selection])
-    probLoss = (1 - (collectivePot/w0)*lambdaValue)
+    probLoss = (1.0 - (collectivePot/w0)*lambdaValue)
+    if rand.uniform(0,1) > probLoss:
+        return False
+    else:
+        return True
+
+def powerRiskCurve(selection, collectivePot, lambdaValue):
+    """ Equation (2) page 7 of the paper"""
+    w0 = sum([individual.startingWealth for individual in selection])
+    probLoss = (1.0 - (collectivePot/w0) ** lambdaValue)
+    if rand.uniform(0,1) > probLoss:
+        return False
+    else:
+        return True
+
+def stepWiseRiskCurve(selection, collectivePot, lambdaValue):
+    """Equation (3) page 7 of the paper"""
+    w0 = sum([individual.startingWealth for individual in selection])
+    probLoss = 1.0 / ( math.exp(lambdaValue*(collectivePot/w0 - 0.5)) + 1.0 )
     if rand.uniform(0,1) > probLoss:
         return False
     else:
@@ -356,7 +374,7 @@ def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize, selectionFunctionGame,
                     popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve):
 
-                    
+
     """
     Args:
         first-line: simulation parameter
@@ -405,7 +423,7 @@ def runSimulation(  generations, numberOfGames,
         population = wrightFisher(population)
         population = mutation(population)
 
-        # Add all contributions in order to make the average contribution over all generations for each round 
+        # Add all contributions in order to make the average contribution over all generations for each round
         for i in range(0, numberOfRounds-1):
             totalAveragedContributionsPerRoundRich[i] += game.contributionsPerRoundRich[i]
             totalAveragedContributionsPerRoundPoor[i] += game.contributionsPerRoundPoor[i]
@@ -484,8 +502,11 @@ if __name__ == "__main__":
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
+    # The three different risk curves with given lambda values
     riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, 1)
+    #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, 1)
+    #riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, 1)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, selectionFunctionGame, \
-                    popSize, 
+                    popSize,
                     alphaPoor, alphaRich, riskFunction, RiskInRound.EveryRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
