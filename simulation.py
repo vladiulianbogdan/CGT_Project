@@ -478,6 +478,9 @@ def wrightFisher(populationArray):
     total = 0
     newPopulation = []
 
+    if (len(populationArray) == 0):
+        return []
+
     for individual in populationArray:
         total += individual.getFitness()
 
@@ -509,31 +512,31 @@ def mutation(population):
 
     return population
 
-globalLambdaValue = 10
+globalLambdaValue = 1
 
 if __name__ == "__main__":
     print("Running as main!")
-    generations = 10000
+    generations = 100000
     numberOfGames = 1000
-    numberOfRounds = 4
+    numberOfRounds = 1
     groupSize = 2
     popSize = 100
 
     alphaPoor = 1
     alphaRich = 1
     wealthPoor = 1
-    wealthRich = 4
+    wealthRich = 1
     typeOfRiskCurve = RiskCurve.Linear
 
-    heterogeneous = True
+    heterogeneous = False
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     # The three different risk curves with given lambda values
-    # riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
     #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
-    riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
+    # riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
                     popSize,
-                    alphaPoor, alphaRich, riskFunction, RiskInRound.LastRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
+                    alphaPoor, alphaRich, riskFunction, RiskInRound.EveryRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
