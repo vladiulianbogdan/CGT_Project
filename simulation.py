@@ -50,7 +50,8 @@ class Individual:
         roundsPlayed(int): how many rounds did this individual play
         cumulatedPayoff(float): payoff for all rounds
     """
-    def __init__(self, endowment, strategy, individualType):
+    def __init__(self, endowment, strategy, individualType, maxThreshold):
+        self.maxThreshold = maxThreshold
         self.startingWealth = endowment # should be immutable
         self.endowment = endowment
         self.strategy = strategy
@@ -151,6 +152,7 @@ class Game:
         threshold = currentStrategy[0]
         contribution = currentStrategy[1] if collectivePot <= threshold else currentStrategy[2]
 
+
         return contribution if (individual.endowment >= contribution) else individual.endowment
 
     def collectiveLoss(self, selection):
@@ -237,7 +239,7 @@ def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThr
         a = rand.uniform(minA, maxA)
         b = rand.uniform(minB, maxB)
         strategy = np.concatenate((strategy, np.array([[threshold, a, b]])), axis=0)
-    return Individual(wealth, strategy, typeInd)
+    return Individual(wealth, strategy, typeInd, maxThreshold)
 
 def randomSelection(population, groupSize, heterogeneous):
     """ mock-function for random selection
@@ -291,10 +293,13 @@ def stepWiseRiskCurve(selection, collectivePot, lambdaValue):
     else:
         return True
 
-def drawValueFromNormalDistribution(mean, sigma = 0.15):
+def drawValueFromNormalDistribution(mean, high, low = 0, sigma = 0.15):
     """  Draws a random value from a distribution """
 
-    return np.random.normal(mean, sigma)
+    value = np.random.normal(mean, sigma)
+    while ( value < low or value > high):
+        value = np.random.normal(mean, sigma)
+    return value
 
 def simpleMutation(individual, mutationChance = 0.01):
     """ Mutates an indivdual with a certain chance
@@ -307,27 +312,16 @@ def simpleMutation(individual, mutationChance = 0.01):
         Individual: either the one give, or a mutated version of that one
     """
     if rand.uniform(0,1) <= mutationChance:
-        strategy = individual.strategy
-        threshold_new = drawValueFromNormalDistribution(strategy[:,0])
-        a_new = drawValueFromNormalDistribution(strategy[:,1])
-        b_new = drawValueFromNormalDistribution(strategy[:,2])
+        strategyArray = individual.strategy
+        newStrategy = []
 
-        # if there is only one strategy, the a_new will not be a list
-        if len(strategy) > 1:
-            a_new[a_new < 0] = 0.0
-            b_new[b_new < 0] = 0.0
-            threshold_new[threshold_new < 0] = 0
-            new_strategy = np.array([threshold_new, a_new, b_new]).transpose()
-        else:
-            if a_new < 0:
-                a_new = 0
-            if b_new < 0:
-                b_new = 0
-            if threshold_new < 0:
-                threshold_new = 0
+        for strategy in strategyArray:
+            threshold_new = drawValueFromNormalDistribution(strategy[0], individual.maxThreshold)
+            a_new = drawValueFromNormalDistribution(strategy[1], individual.startingWealth)
+            b_new = drawValueFromNormalDistribution(strategy[2], individual.startingWealth)
 
-            new_strategy = np.array([[threshold_new, a_new, b_new]])
-        return Individual(individual.startingWealth, new_strategy, individual.individualType)
+            newStrategy.append([threshold_new, a_new, b_new])
+        return Individual(individual.startingWealth, newStrategy, individual.individualType, individual.maxThreshold)
     else:
         return individual
 
@@ -412,13 +406,17 @@ def runSimulation(  generations, numberOfGames,
     else:
         population = Population(2*popSize)
 
-    for _ in range(0, popSize):
-        individual = randomInitialization(wealthRich, True, numberOfRounds, 0, 1, 0, wealthRich, 0, wealthRich)
-        population.addIndividual(individual)
-
     if (heterogeneous == True):
         for _ in range(0, popSize):
-            individual = randomInitialization(wealthPoor, False, numberOfRounds, 0, 1, 0, wealthPoor, 0, wealthPoor)
+            individual = randomInitialization(wealthRich, True, numberOfRounds, 0, wealthRich * groupSize + wealthPoor * groupSize, 0, wealthRich, 0, wealthRich)
+            population.addIndividual(individual)
+
+        for _ in range(0, popSize):
+            individual = randomInitialization(wealthPoor, False, numberOfRounds, 0, wealthRich * groupSize + wealthPoor * groupSize, 0, wealthPoor, 0, wealthPoor)
+            population.addIndividual(individual)
+    else:
+        for _ in range(0, popSize):
+            individual = randomInitialization(wealthRich, True, numberOfRounds, 0, wealthRich * groupSize, 0, wealthRich, 0, wealthRich)
             population.addIndividual(individual)
 
     writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
@@ -498,7 +496,8 @@ def wrightFisher(populationArray):
                 ind = Individual(
                     populationArray[j].endowment,
                     populationArray[j].strategy,
-                    populationArray[j].individualType
+                    populationArray[j].individualType,
+                    populationArray[j].maxThreshold
                 )
                 newPopulation.append(ind)
                 break
@@ -512,7 +511,7 @@ def mutation(population):
 
     return population
 
-globalLambdaValue = 1
+globalLambdaValue = 5
 
 if __name__ == "__main__":
     print("Running as main!")
@@ -526,15 +525,15 @@ if __name__ == "__main__":
     alphaRich = 1
     wealthPoor = 1
     wealthRich = 1
-    typeOfRiskCurve = RiskCurve.Linear
+    typeOfRiskCurve = RiskCurve.PowerFunction
 
     heterogeneous = False
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     # The three different risk curves with given lambda values
-    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
-    #riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
+    # riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
     # riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
