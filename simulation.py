@@ -522,7 +522,9 @@ if __name__ == "__main__":
     heterogeneous = True if (int(sys.argv[12]) == 1) else False
     globalLambdaValue = int(sys.argv[13])
 
-    file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
+    filename = sys.argv[14]
+
+    file = open("%s_%d_%d_%d_%d_%s_%d_%d_%d_%d_%d_%s_%d_%d.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
 
     doc = """nr_generations: %d
 number_of_rounds: %d
