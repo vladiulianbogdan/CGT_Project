@@ -107,7 +107,7 @@ class Population:
             self.poorPopulation[index - len(self.richPopulation)] = newIndividual
         else:
             self.richPopulation[index] = newIndividual
-            
+
 
     def prettyPrintPopulation(self):
         print("Total size of popualtion: " + str(len(self.population)))
@@ -115,9 +115,17 @@ class Population:
             print(individual)
 
 class Game:
-    """
-        TODO add Docstring
-        risk in round:
+    """ Initialization of the Game of a population with given functions, ready to play multiple times
+
+    Attributes:
+        population(Population): that the population that will play the game
+        groupSize(Int): in the paper this is the m value, how many Indviduals are playing a game against each other
+        rounds(Int): how many rounds are played against each other?
+        riskFunction(Function): chance of risk in the multi-loss risk game
+        riskInRound(Int as Enum): In which round does the risk happen/ or are there multiple loses
+        alphaPoor(Float): loss fraction for poor individuals
+        alphaRich(Float): loss fraction for rich individuals
+        heterogeneous(Boolean): False for only one population and True for rich and poor
     """
     def __init__(self, population, groupSize, rounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous):
         self.population = population
