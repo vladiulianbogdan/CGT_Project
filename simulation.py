@@ -520,11 +520,12 @@ if __name__ == "__main__":
     typeOfRiskCurve = RiskCurve(int(sys.argv[11]))
 
     heterogeneous = True if (int(sys.argv[12]) == 1) else False
-    globalLambdaValue = int(sys.argv[13])
+    globalLambdaValue = float(sys.argv[13])
 
     filename = sys.argv[14]
 
-    file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%d_%d_%s_%d_%d_%s.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue, datetime.now().strftime("%d-%m-%Y_%H:%M:%S")), "w+")
+    file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%d_%d_%s_%d_%0.2f.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
+
 
     doc = """nr_generations: %d
 number_of_rounds: %d
@@ -538,7 +539,7 @@ wealth_poor: %d
 wealth_rich: %d
 type_of_risk_curve: %s
 heterogenous: %d
-lambda_value: %d
+lambda_value: %0.2f
 """ % (generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue)
     print(doc)
     file.write(doc)
