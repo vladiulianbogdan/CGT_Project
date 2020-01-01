@@ -33,9 +33,8 @@ class RiskInRound(enum.Enum):
 
 class RiskCurve(enum.Enum):
    Linear = 1
-   PieceWiseLinear = 2
-   PowerFunction = 3
-   Curves = 4
+   PowerFunction = 2
+   StepWiseLinear = 3
 
 class Individual:
     """A single individual with the information it has in the system
@@ -76,7 +75,7 @@ class Individual:
 class Population:
     """ represents a population
 
-        There are two ways to create a population: 
+        There are two ways to create a population:
 
         1. by calling this constructor with populationSize and then adding individuals
         2. by calling the constructor with populationSize and the rich and poor populations.
@@ -542,10 +541,19 @@ lambda_value: %d
     print(doc)
     file.write(doc)
 
-    # The three different risk curves with given lambda values
-    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
-    # riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
-    # riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
+    # correspondce to orange curve figure 1
+    # correspondce also to blue curve figure 1 but with high lambda
+    if (RiskCurve.Linear == typeOfRiskCurve):
+       riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    # correspondce to red curve figure 1
+    elif RiskCurve.StepWiseLinear == typeOfRiskCurve:
+       riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
+    # correspondce to black curve figure 1
+    elif RiskCurve.PowerFunction == typeOfRiskCurve:
+       riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
+    else:
+       print("Invalid risk curve.")
+
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
                     popSize,
