@@ -542,10 +542,10 @@ lambda_value: %d
     file.write(doc)
 
     # correspondce to orange curve figure 1
-    # correspondce also to blue curve figure 1 but with high lambda
+    # correspondce also to red curve figure 1 but with high lambda
     if (RiskCurve.Linear == typeOfRiskCurve):
        riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
-    # correspondce to red curve figure 1
+    # correspondce to blue curve figure 1
     elif RiskCurve.StepWiseLinear == typeOfRiskCurve:
        riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     # correspondce to black curve figure 1
