@@ -524,7 +524,7 @@ if __name__ == "__main__":
 
     filename = sys.argv[14]
 
-    file = open("%s_%d_%d_%d_%d_%s_%d_%d_%d_%d_%d_%s_%d_%d.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
+    file = open("%s_%d_%d_%d_%d_%s_%d_%d_%d_%d_%d_%s_%d_%d_%s.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue, datetime.now().strftime("%d-%m-%Y_%H:%M:%S")), "w+")
 
     doc = """nr_generations: %d
 number_of_rounds: %d
