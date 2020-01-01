@@ -514,11 +514,9 @@ if __name__ == "__main__":
 
     alphaPoor = float(sys.argv[6])
     alphaRich = float(sys.argv[7])
-    print(f"alphaPoor={alphaPoor}")
-    print(f"alphaRich={alphaRich}")
     numberOfGames = int(sys.argv[8])
-    wealthPoor = float(sys.argv[9])
-    wealthRich = float(sys.argv[10])
+    wealthPoor = int(sys.argv[9])
+    wealthRich = int(sys.argv[10])
     typeOfRiskCurve = RiskCurve(int(sys.argv[11]))
 
     heterogeneous = True if (int(sys.argv[12]) == 1) else False
@@ -526,7 +524,7 @@ if __name__ == "__main__":
 
     filename = sys.argv[14]
 
-    file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%0.2f_%0.2f_%s_%d_%0.2f_%s.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue, datetime.now().strftime("%d-%m-%Y_%H:%M:%S")), "w+")
+    file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%d_%d_%s_%d_%0.2f.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
 
     doc = """nr_generations: %d
 number_of_rounds: %d
@@ -536,8 +534,8 @@ risk_in_round: %s
 alpha_poor: %0.2f
 alpha_rich: %0.2f
 number_of_games: %d
-wealth_poor: %0.2f
-wealth_rich: %0.2f
+wealth_poor: %d
+wealth_rich: %d
 type_of_risk_curve: %s
 heterogenous: %d
 lambda_value: %0.2f
