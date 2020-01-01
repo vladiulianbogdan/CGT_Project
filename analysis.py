@@ -32,7 +32,7 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
     
     if heterogeneous:
         
-        linesHeader = 9
+        linesHeader = 13
         linesSummary = 3
         linesPerGeneration = 2
         
@@ -60,7 +60,7 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
         
     else: # Is homogeneous. In this case the contributions are just individual
         
-        linesHeader = 7
+        linesHeader = 13
         linesSummary = 2
         
         if numGenerations is None:
@@ -82,26 +82,15 @@ def readHeader(filename):
     """ Extract header information return this in a dictionary"""
     # Start with empty dictionary
     Header = {}
-    with open(filename) as file: # Go over each line one by one and add it to the dictionary
-        Header["heterogeneous"] = bool(int(file.readline()))
-        Header["popSize"] = int(file.readline())
-        
-        if Header["heterogeneous"]==False:
-            Header["wealthRich"] = float(file.readline())
-        else:
-            Header["wealthRich"] = float(file.readline())
-            Header["wealthPoor"] = float(file.readline())
-            
-        Header["numberOfRounds"] = int(file.readline())
-        Header["typeOfRiskCurve"] = int(file.readline())
-        
-        if Header["heterogeneous"]==False:
-            Header["alphaRich"] = float(file.readline())
-        else: 
-            Header["alphaRich"] = float(file.readline())
-            Header["alphaPoor"] = float(file.readline())
-            
-        Header["lambda"] = float(file.readline())
+    linesHeader = 13
+    with open(filename) as f:
+        for i in range(linesHeader):
+            Attribute, value = f.readline()[:-1].split(" ") # [:-1] to remove the newline character from the last line
+            try:
+                value=float(value) # Convert to a number. if possible, to be save just convert everything to float
+            except:
+                pass
+            Header[Attribute[:-1]] = value # [:-1]  to remove the ":" 
         
     return Header
 
