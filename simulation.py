@@ -512,8 +512,8 @@ if __name__ == "__main__":
 
     riskInRound = RiskInRound(int(sys.argv[5]))
 
-    alphaPoor = int(sys.argv[6])
-    alphaRich = int(sys.argv[7])
+    alphaPoor = float(sys.argv[6])
+    alphaRich = float(sys.argv[7])
     numberOfGames = int(sys.argv[8])
     wealthPoor = int(sys.argv[9])
     wealthRich = int(sys.argv[10])
