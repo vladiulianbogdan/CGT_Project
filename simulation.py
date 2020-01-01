@@ -21,6 +21,7 @@ import random as rand
 import enum
 import math
 import time
+import sys
 from datetime import datetime
 
 # Using enum class create enumerations
@@ -354,24 +355,6 @@ New functions below here:
     - split project into several files?
 """
 
-def writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor):
-    file.write("%d\n" % heterogeneous)
-    file.write("%d\n" % popSize) # population size
-    if heterogeneous == False:
-        file.write("%f\n" % wealthRich) # initial endowment
-    else:
-        file.write("%f\n" % wealthRich) # initial endowment
-        file.write("%f\n" % wealthPoor) # initial endowment
-    file.write("%d\n" % numberOfRounds) # number of rounds
-    file.write("%d\n" % typeOfRiskCurve.value) # type of risk curve
-
-    if heterogeneous == False:
-        file.write("%f\n" % alphaRich)
-    else:
-        file.write("%f\n" % alphaRich)
-        file.write("%f\n" % alphaPoor)
-    file.write("%f\n" % globalLambdaValue) # lambda value
-
 def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor):
     if heterogeneous == True:
         file.write("r ")
@@ -399,7 +382,7 @@ def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRou
     # - risk function
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize,
-                    popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve):
+                    popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue):
 
 
     """
@@ -431,8 +414,6 @@ def runSimulation(  generations, numberOfGames,
         for _ in range(0, popSize):
             individual = randomInitialization(wealthRich, True, numberOfRounds, 0, wealthRich * groupSize, 0, wealthRich, 0, wealthRich)
             population.addIndividual(individual)
-
-    writeHeaderDataToFile(file, heterogeneous, popSize, wealthRich, wealthPoor, numberOfRounds, typeOfRiskCurve, alphaRich, alphaPoor)
 
     # Save the total average contribution over all rounds, games and generations
     totalAveragedContribution = 0
@@ -524,25 +505,42 @@ def mutation(population):
 
     return population
 
-globalLambdaValue = 1
-
 if __name__ == "__main__":
-    print("Running as main!")
-    generations = 100000
-    numberOfGames = 1000
-    numberOfRounds = 4
-    groupSize = 2
-    popSize = 100
+    generations = int(sys.argv[1])
+    numberOfRounds = int(sys.argv[2])
+    groupSize = int(sys.argv[3])
+    popSize = int(sys.argv[4])
 
-    alphaPoor = 1
-    alphaRich = 1
-    wealthPoor = 1
-    wealthRich = 1
-    typeOfRiskCurve = RiskCurve.Linear
+    riskInRound = RiskInRound(int(sys.argv[5]))
 
-    heterogeneous = False
+    alphaPoor = int(sys.argv[6])
+    alphaRich = int(sys.argv[7])
+    numberOfGames = int(sys.argv[8])
+    wealthPoor = int(sys.argv[9])
+    wealthRich = int(sys.argv[10])
+    typeOfRiskCurve = RiskCurve(int(sys.argv[11]))
+
+    heterogeneous = True if (int(sys.argv[12]) == 1) else False
+    globalLambdaValue = int(sys.argv[13])
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
+
+    doc = """nr_generations: %d
+number_of_rounds: %d
+group_size: %d
+population_size: %d
+risk_in_round: %s
+alpha_poor: %d
+alpha_rich: %d
+number_of_games: %d
+wealth_poor: %d
+wealth_rich: %d
+type_of_risk_curve: %s
+heterogenous: %d
+lambda_value: %d
+""" % (generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue)
+    print(doc)
+    file.write(doc)
 
     # The three different risk curves with given lambda values
     riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
@@ -551,4 +549,4 @@ if __name__ == "__main__":
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
                     popSize,
-                    alphaPoor, alphaRich, riskFunction, RiskInRound.EveryRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve)
+                    alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue)
