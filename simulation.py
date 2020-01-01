@@ -49,6 +49,7 @@ class Individual:
         type(boolean): either poor(False) or rich(True) individual
         roundsPlayed(int): how many rounds did this individual play
         cumulatedPayoff(float): payoff for all rounds
+        maxThreshold(float): The maximum value that the threshold of a strategy can take.
     """
     def __init__(self, endowment, strategy, individualType, maxThreshold):
         self.maxThreshold = maxThreshold
@@ -72,14 +73,17 @@ class Individual:
         return "[fitness = " + str(self.getFitness()) + "]\n" + "[endowment = " + str(self.endowment) + "]\n" + str(self.strategy)
 
 class Population:
-    """ represents a popualtion
+    """ represents a population
+
+        There are two ways to create a population: 
+
+        1. by calling this constructor with populationSize and then adding individuals
+        2. by calling the constructor with populationSize and the rich and poor populations.
 
         Attributes:
-            - selectionFunction(function(population, fitnessFunction) => [Individual, ... Individual] ): Returns a number of individuals given a population
-            - fitnessFunction(function => fitnessvalue): A function that can access all members of the population class, should be used to evaluate fitnessvalue
-                                                        together with the selectionFunction
             - populationSize(Int): number of individuals in the population
-            - population([Individual, ...., Individual]): all individuals
+            - richPopulation([Individual, ...., Individual]): all rich individuals or empty
+            - poorPopulation([Individual, ...., Individual]): all poor individuals or empty
     """
     def __init__(self, populationSize, richPopulation=[], poorPopulation=[]):
         if len(richPopulation) != 0 or len(poorPopulation) !=0:
@@ -249,6 +253,7 @@ def randomSelection(population, groupSize, heterogeneous):
         Args:
             population(Population or list[Individual.... Individual]): Population to select from, using the population fiel
             groupSize(int): number of individuals choosen
+            groupSize(boolean): true if the simulation is heterogeneous, false otherwise
 
         Returns:
             Array: (Individual, ..., Individual)
@@ -511,13 +516,13 @@ def mutation(population):
 
     return population
 
-globalLambdaValue = 5
+globalLambdaValue = 1
 
 if __name__ == "__main__":
     print("Running as main!")
     generations = 100000
     numberOfGames = 1000
-    numberOfRounds = 1
+    numberOfRounds = 4
     groupSize = 2
     popSize = 100
 
@@ -525,15 +530,15 @@ if __name__ == "__main__":
     alphaRich = 1
     wealthPoor = 1
     wealthRich = 1
-    typeOfRiskCurve = RiskCurve.PowerFunction
+    typeOfRiskCurve = RiskCurve.Linear
 
     heterogeneous = False
 
     file = open("simulation_" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + ".dat", "w+")
 
     # The three different risk curves with given lambda values
-    # riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
-    riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
+    riskFunction = lambda selection, collectivePot: linearRiskCurve(selection, collectivePot, globalLambdaValue)
+    # riskFunction = lambda selection, collectivePot: powerRiskCurve(selection, collectivePot, globalLambdaValue)
     # riskFunction = lambda selection, collectivePot: stepWiseRiskCurve(selection, collectivePot, globalLambdaValue)
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
