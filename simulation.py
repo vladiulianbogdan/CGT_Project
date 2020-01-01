@@ -526,6 +526,7 @@ if __name__ == "__main__":
 
     file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%d_%d_%s_%d_%0.2f.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
 
+
     doc = """nr_generations: %d
 number_of_rounds: %d
 group_size: %d
