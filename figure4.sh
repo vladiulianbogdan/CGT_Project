@@ -1,7 +1,7 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-GEN=100000
+GEN=10000
 
 for alphaConfiguration in "1 1" "1 0.8" "0.5 0.8" "0.5 0.5"
     do
