@@ -561,3 +561,5 @@ lambda_value: %0.2f
                     numberOfRounds, groupSize, \
                     popSize,
                     alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue)
+    print("Finished simulation:")
+    print(doc)
