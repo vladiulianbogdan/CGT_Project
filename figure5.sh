@@ -1,7 +1,7 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-GEN=5
+GEN=100000
 
 for riskcurve in 1 2 3
 	do	
@@ -13,7 +13,6 @@ for riskcurve in 1 2 3
 				do
 					python3 simulation.py $GEN $rounds 2 100 1 $alphaConfiguration $alphaConfiguration 1000 2 2 $riskcurve 1 $lambdaConfiguration figure5_ &
 				done
-			wait
 			done
 		wait
 		done
