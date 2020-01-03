@@ -131,7 +131,7 @@ class Game:
         alphaRich(Float): loss fraction for rich individuals
         heterogeneous(Boolean): False for only one population and True for rich and poor
     """
-    def __init__(self, population, groupSize, rounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous):
+    def __init__(self, population, groupSize, rounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous, investment):
         self.population = population
         self.rounds = rounds
         self.groupSize = groupSize
@@ -139,13 +139,22 @@ class Game:
         self.riskFunction = riskFunction
         self.alphaPoor = alphaPoor
         self.alphaRich = alphaRich
+        self.investmentPerRound = np.zeros(rounds)
         self.contributionsPerRoundRich = np.zeros(rounds)
         self.contributionsPerRoundPoor = np.zeros(rounds)
         self.heterogeneous = heterogeneous
+        self.investment = investment
 
     def select(self):
         """ use the given selection function to get an amount of indivduals equal to the groupSize """
         return randomSelection(self.population,  self.groupSize, self.heterogeneous)
+
+    def getInvestment(self, individual, currentRound, collectivePot):
+        currentStrategy = individual.strategy[currentRound]
+        threshold = currentStrategy[0]
+        investment = currentStrategy[3] if collectivePot <= threshold else currentStrategy[4]
+
+        return investment if (individual.endowment >= investment) else individual.endowment
 
     def contribution(self, individual, currentRound, collectivePot):
         """ Checking for the strategy (tau; a, b)
@@ -164,8 +173,11 @@ class Game:
         threshold = currentStrategy[0]
         contribution = currentStrategy[1] if collectivePot <= threshold else currentStrategy[2]
 
-
         return contribution if (individual.endowment >= contribution) else individual.endowment
+
+    def returnOfInvestment(self, selection):
+        for individual in selection:
+            individual.endowment *= rand.uniform(1, 1.10)
 
     def collectiveLoss(self, selection):
         """" All member loss, ONLY SIDE EFFECTS!
@@ -196,15 +208,27 @@ class Game:
             contributionThisRound = 0
             for individual in selection:
                 contribution = self.contribution(individual, currentRound, collectivePot)
+
                 individual.endowment -= contribution
+
+                if (self.investment == True):
+                    investment = self.getInvestment(individual, currentRound, collectivePot)
+                    individual.endowment -= investment
+
                 contributionThisRound += contribution
                 individual.totalContribution += contribution
+
+                if (self.investment == True):
+                    self.investmentPerRound[currentRound] += investment
 
                 if individual.isRich() == True:
                     self.contributionsPerRoundRich[currentRound] += contribution
                 else:
                     self.contributionsPerRoundPoor[currentRound] += contribution
             collectivePot += contributionThisRound
+
+            if (self.investment == True):
+                self.returnOfInvestment(selection)
 
             if (
                 (
@@ -245,12 +269,16 @@ def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThr
     threshold = rand.uniform(minThreshold, maxThreshold)
     a = rand.uniform(minA, maxA)
     b = rand.uniform(minB, maxB)
-    strategy = np.array([[threshold, a, b]])
+    investment1 = rand.uniform(minA, maxA)
+    investment2 = rand.uniform(minB, maxB)
+    strategy = np.array([[threshold, a, b, investment1, investment2]])
     for round in range(1, numberOfRounds):
         threshold = rand.uniform(minThreshold, maxThreshold)
         a = rand.uniform(minA, maxA)
         b = rand.uniform(minB, maxB)
-        strategy = np.concatenate((strategy, np.array([[threshold, a, b]])), axis=0)
+        investment1 = rand.uniform(minA, maxA)
+        investment2 = rand.uniform(minB, maxB)
+        strategy = np.concatenate((strategy, np.array([[threshold, a, b, investment1, investment2]])), axis=0)
     return Individual(wealth, strategy, typeInd, maxThreshold)
 
 def randomSelection(population, groupSize, heterogeneous):
@@ -332,8 +360,10 @@ def simpleMutation(individual, mutationChance = 0.01):
             threshold_new = drawValueFromNormalDistribution(strategy[0], individual.maxThreshold)
             a_new = drawValueFromNormalDistribution(strategy[1], individual.startingWealth)
             b_new = drawValueFromNormalDistribution(strategy[2], individual.startingWealth)
+            investment1_new = drawValueFromNormalDistribution(strategy[3], individual.startingWealth)
+            investment2_new = drawValueFromNormalDistribution(strategy[4], individual.startingWealth)
 
-            newStrategy.append([threshold_new, a_new, b_new])
+            newStrategy.append([threshold_new, a_new, b_new, investment1_new, investment2_new])
         return Individual(individual.startingWealth, newStrategy, individual.individualType, individual.maxThreshold)
     else:
         return individual
@@ -354,7 +384,7 @@ New functions below here:
     - split project into several files?
 """
 
-def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor):
+def writeContributionDataToFile(file, investment, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor, totalAveragedInvestmentPerRound):
     if heterogeneous == True:
         file.write("r ")
         for contribution in averagedContributionsPerRoundRich:
@@ -367,6 +397,11 @@ def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRou
     else:
         for contribution in averagedContributionsPerRoundRich:
             file.write("%f " % contribution)
+
+        if (investment == True):
+            for investment in totalAveragedInvestmentPerRound:
+                file.write("%f " % investment)
+
         file.write("\n")
 #parameters:
     # - group size
@@ -381,7 +416,9 @@ def writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRou
     # - risk function
 def runSimulation(  generations, numberOfGames,
                     numberOfRounds, groupSize,
-                    popSize, alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue):
+                    popSize, alphaPoor, alphaRich, riskFunction, 
+                    riskInRound, file, heterogeneous, wealthPoor,
+                    wealthRich, typeOfRiskCurve, globalLambdaValue, investment):
 
 
     """
@@ -420,9 +457,11 @@ def runSimulation(  generations, numberOfGames,
     totalAveragedContributionsPerRoundRich = np.zeros(numberOfRounds)
     totalAveragedContributionsPerRoundPoor = np.zeros(numberOfRounds)
 
+    totalAveragedInvestmentPerRound = np.zeros(numberOfRounds)
+
     # Outline of the process
     for _ in range(0, generations):
-        game = Game(population, groupSize, numberOfRounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous)
+        game = Game(population, groupSize, numberOfRounds, riskFunction, riskInRound ,alphaPoor, alphaRich, heterogeneous, investment)
         for _ in range(0, numberOfGames):
             game.play()
 
@@ -445,11 +484,13 @@ def runSimulation(  generations, numberOfGames,
         for i in range(0, numberOfRounds):
             totalAveragedContributionsPerRoundRich[i] += game.contributionsPerRoundRich[i]
             totalAveragedContributionsPerRoundPoor[i] += game.contributionsPerRoundPoor[i]
+            totalAveragedInvestmentPerRound[i] += game.investmentPerRound[i]
 
         averagedContributionsPerRoundRich = game.contributionsPerRoundRich / (groupSize * numberOfGames)
         averagedContributionsPerRoundPoor = game.contributionsPerRoundPoor / (groupSize * numberOfGames)
+        totalAveragedInvestmentPerRound = game.investmentPerRound / (groupSize * numberOfGames)
 
-        writeContributionDataToFile(file, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor)
+        writeContributionDataToFile(file, investment, heterogeneous, averagedContributionsPerRoundRich, averagedContributionsPerRoundPoor, totalAveragedInvestmentPerRound)
 
     totalAveragedContributionsPerRoundRich /= (groupSize * numberOfGames * generations)
     totalAveragedContributionsPerRoundPoor /= (groupSize * numberOfGames * generations)
@@ -458,12 +499,12 @@ def runSimulation(  generations, numberOfGames,
 
     for c in totalAveragedContributionsPerRoundRich:
         file.write("%f " % c)
-    file.write("\n")
 
     if heterogeneous == True:
         for c in totalAveragedContributionsPerRoundPoor:
+            print("QWE")
             file.write("%f " % c)
-        file.write("\n")
+    file.write("\n")
 
 def wrightFisher(populationArray):
     total = 0
@@ -523,6 +564,7 @@ if __name__ == "__main__":
     globalLambdaValue = float(sys.argv[13])
 
     filename = sys.argv[14]
+    investment = True
 
     file = open("%s_%d_%d_%d_%d_%s_%0.2f_%0.2f_%d_%d_%d_%s_%d_%0.2f.dat" % (filename, generations, numberOfRounds, groupSize, popSize, riskInRound.name, alphaPoor, alphaRich, numberOfGames, wealthPoor, wealthRich, typeOfRiskCurve.name, heterogeneous, globalLambdaValue), "w+")
 
@@ -560,6 +602,6 @@ lambda_value: %0.2f
     runSimulation(  generations, numberOfGames, \
                     numberOfRounds, groupSize, \
                     popSize,
-                    alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue)
+                    alphaPoor, alphaRich, riskFunction, riskInRound, file, heterogeneous, wealthPoor, wealthRich, typeOfRiskCurve, globalLambdaValue, investment)
     print("Finished simulation:")
     print(doc)
