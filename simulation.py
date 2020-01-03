@@ -271,7 +271,6 @@ def alphaRoundDependedMode(alpha,rounds):
     Return by default [0.,0.,0.,0.] if the alpha mode was not defined
     """
     if alpha==-1 and rounds==4:
-        print(f"alphaRoundDependedMode={alpha}")
         return [0.2,0.2,0.2,0.8]
     elif alpha==-2 and rounds==4:
         return [0.2,0.4,0.6,0.8]
