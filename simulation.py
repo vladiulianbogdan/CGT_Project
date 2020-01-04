@@ -139,6 +139,10 @@ class Game:
         self.riskFunction = riskFunction
         self.alphaPoor = alphaPoor
         self.alphaRich = alphaRich
+        if self.alphaPoor < 0:
+            self.alphaPourRound = alphaRoundDependedMode(alphaPoor,self.rounds)
+        if self.alphaRich < 0:
+            self.alphaRichRound = alphaRoundDependedMode(alphaRich,self.rounds)
         self.contributionsPerRoundRich = np.zeros(rounds)
         self.contributionsPerRoundPoor = np.zeros(rounds)
         self.heterogeneous = heterogeneous
@@ -167,17 +171,25 @@ class Game:
 
         return contribution if (individual.endowment >= contribution) else individual.endowment
 
-    def collectiveLoss(self, selection):
+    def collectiveLoss(self, selection, currentRound):
         """" All member loss, ONLY SIDE EFFECTS!
 
         Collective loss happens to all individuals in the seleciton
         depending on their type!
+
+ 		The loss can also depened on round if set. 
         """
         for individual in selection:
             if individual.individualType:
-                individual.endowment *= (1 - self.alphaRich)
+                if self.alphaRich<0:
+                    individual.endowment *= (1 - self.alphaRichRound[currentRound])
+                else:
+                    individual.endowment *= (1 - self.alphaRich)
             else:
-                individual.endowment *= (1 - self.alphaPoor)
+                if self.alphaPoor<0:
+                    individual.endowment *= (1 - self.alphaPoorRound[currentRound])
+                else:
+                    individual.endowment *= (1 - self.alphaPoor)
 
     def play(self):
         """ Play one game with a certain amount of rounds
@@ -215,7 +227,7 @@ class Game:
                 ) and
                 self.riskFunction(selection, collectivePot)
                ):
-                self.collectiveLoss(selection)
+                self.collectiveLoss(selection, currentRound)
 
         # reset individuals and add payoff for this round
         for individual in selection:
@@ -252,6 +264,19 @@ def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThr
         b = rand.uniform(minB, maxB)
         strategy = np.concatenate((strategy, np.array([[threshold, a, b]])), axis=0)
     return Individual(wealth, strategy, typeInd, maxThreshold)
+
+def alphaRoundDependedMode(alpha,rounds):
+    """
+    Gives back list that represents the alpha dependment on rounds.
+    Return by default [0.,0.,0.,0.] if the alpha mode was not defined
+    """
+    if alpha==-1 and rounds==4:
+        return [0.2,0.2,0.2,0.8]
+    elif alpha==-2 and rounds==4:
+        return [0.2,0.4,0.6,0.8]
+    else:
+        print("That alpha mode is not defined!")
+        return [0.,0.,0.,0.] 
 
 def randomSelection(population, groupSize, heterogeneous):
     """ mock-function for random selection
