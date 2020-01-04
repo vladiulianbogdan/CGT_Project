@@ -15,7 +15,7 @@ def file_len(fname):
             pass
     return i + 1
 
-def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=None):
+def readContributionFileToData(fileName, heterogeneous, rounds, investment=False, numGenerations=None):
     """ Read the contributions per generation of a file
         
         Attributes:
@@ -66,7 +66,11 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
         if numGenerations is None:
             numGenerations = lenfile - linesHeader -linesSummary
         
+        print(rounds)
+        print(numGenerations)
         contribution = np.empty(shape=(numGenerations,rounds))
+        if investment == True:
+            investmentArray = np.empty(shape=(numGenerations,rounds))
         
         with open(fileName) as file:
             for i, line in enumerate(file):
@@ -74,9 +78,14 @@ def readContributionFileToData(fileName, heterogeneous, rounds, numGenerations=N
                     continue
                 if i >= lenfile - linesSummary:
                     continue
-                contribution[i-linesHeader] = np.fromstring(line,sep=" ")
+                contribution[i-linesHeader] = np.fromstring(line,sep=" ")[:4]
+                if investment == True:
+                    investmentArray[i-linesHeader] = np.fromstring(line,sep=" ")[4:]
                 
-    return contribution
+    if investment == True:
+        return (contribution, investmentArray)
+    else:
+        return contribution
 
 def readHeader(filename):
     """ Extract header information return this in a dictionary"""
@@ -124,7 +133,7 @@ def readSummary(filename, heterogeneous):
     
     return summary
 
-def plotContributionVsGeneration(contributionArray,plotRich=True):
+def plotContributionVsGeneration(contributionArray, plotRich=True):
     """ Plot contribution versus itteration
         plotRich = True the rich are plot else the poor are plot
         

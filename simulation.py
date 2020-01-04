@@ -151,8 +151,7 @@ class Game:
 
     def getInvestment(self, individual, currentRound, collectivePot):
         currentStrategy = individual.strategy[currentRound]
-        threshold = currentStrategy[0]
-        investment = currentStrategy[3] if collectivePot <= threshold else currentStrategy[4]
+        investment = currentStrategy[3]
 
         return investment if (individual.endowment >= investment) else individual.endowment
 
@@ -175,9 +174,9 @@ class Game:
 
         return contribution if (individual.endowment >= contribution) else individual.endowment
 
-    def returnOfInvestment(self, selection):
-        for individual in selection:
-            individual.endowment *= rand.uniform(1, 1.10)
+    def returnOfInvestment(self, selection, invests):
+        for row, individual in enumerate(selection):
+            individual.endowment += invests[row] * rand.uniform(1.10, 2.0)
 
     def collectiveLoss(self, selection):
         """" All member loss, ONLY SIDE EFFECTS!
@@ -203,6 +202,7 @@ class Game:
         collectivePot = 0
 
         randomRound = rand.uniform(0, self.rounds)
+        invests = []
 
         for currentRound in range(0,self.rounds):
             contributionThisRound = 0
@@ -214,6 +214,7 @@ class Game:
                 if (self.investment == True):
                     investment = self.getInvestment(individual, currentRound, collectivePot)
                     individual.endowment -= investment
+                    invests.append(investment)
 
                 contributionThisRound += contribution
                 individual.totalContribution += contribution
@@ -228,7 +229,7 @@ class Game:
             collectivePot += contributionThisRound
 
             if (self.investment == True):
-                self.returnOfInvestment(selection)
+                self.returnOfInvestment(selection, invests)
 
             if (
                 (
@@ -270,15 +271,13 @@ def randomInitialization(wealth, typeInd, numberOfRounds, minThreshold=0, maxThr
     a = rand.uniform(minA, maxA)
     b = rand.uniform(minB, maxB)
     investment1 = rand.uniform(minA, maxA)
-    investment2 = rand.uniform(minB, maxB)
-    strategy = np.array([[threshold, a, b, investment1, investment2]])
+    strategy = np.array([[threshold, a, b, investment1]])
     for round in range(1, numberOfRounds):
         threshold = rand.uniform(minThreshold, maxThreshold)
         a = rand.uniform(minA, maxA)
         b = rand.uniform(minB, maxB)
         investment1 = rand.uniform(minA, maxA)
-        investment2 = rand.uniform(minB, maxB)
-        strategy = np.concatenate((strategy, np.array([[threshold, a, b, investment1, investment2]])), axis=0)
+        strategy = np.concatenate((strategy, np.array([[threshold, a, b, investment1]])), axis=0)
     return Individual(wealth, strategy, typeInd, maxThreshold)
 
 def randomSelection(population, groupSize, heterogeneous):
@@ -361,9 +360,8 @@ def simpleMutation(individual, mutationChance = 0.01):
             a_new = drawValueFromNormalDistribution(strategy[1], individual.startingWealth)
             b_new = drawValueFromNormalDistribution(strategy[2], individual.startingWealth)
             investment1_new = drawValueFromNormalDistribution(strategy[3], individual.startingWealth)
-            investment2_new = drawValueFromNormalDistribution(strategy[4], individual.startingWealth)
 
-            newStrategy.append([threshold_new, a_new, b_new, investment1_new, investment2_new])
+            newStrategy.append([threshold_new, a_new, b_new, investment1_new])
         return Individual(individual.startingWealth, newStrategy, individual.individualType, individual.maxThreshold)
     else:
         return individual
