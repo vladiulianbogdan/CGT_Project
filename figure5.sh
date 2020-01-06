@@ -11,7 +11,7 @@ for riskcurve in 1 2 3
 			do
 			for alphaConfiguration in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
 				do
-					python3 simulation.py $GEN $rounds 2 100 1 $alphaConfiguration $alphaConfiguration 1000 2 2 $riskcurve 1 $lambdaConfiguration figure5_ &
+					python3 simulation.py $GEN $rounds 2 100 1 $alphaConfiguration $alphaConfiguration 1000 2 2 $riskcurve 0 $lambdaConfiguration figure5_ &
 				done
 			done
 		wait
