@@ -1,6 +1,9 @@
 .DS_Store
 *.out
 *.dat
+*.png
+*.xcf
+*.zip
 .vscode
 .ipynb_checkpoints/
 __pycache__/

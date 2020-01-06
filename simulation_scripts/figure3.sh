@@ -3,7 +3,7 @@ trap "kill 0" EXIT
 
 GEN=100000
 
-for lossRich in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.9 1.0
+for lossRich in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
     do
       for inRound in 1 2 3 4
         do
@@ -11,6 +11,7 @@ for lossRich in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.9 1.0
               do
                   python simulation.py $GEN 4 2 100 $inRound $lossPoor $lossRich 1000 1 4 3 1 10 figure3_ &
               done
+          wait
         done
     done
 
