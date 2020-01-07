@@ -1,11 +1,7 @@
+# Script for reading the files generated from simulation.py
+
 import numpy as np 
 import matplotlib.pyplot as plt 
-
-# Here are some functions for reading the .dat file that is generated in simulation.py
-# These functions were developed in TestBook notebook where I construct them interactively.
-# I also intended that these functions are used interactivaly in the notebook and not from a script
-# Because doing analysis is way easier in a notebook
-# - lennart (2019)
 
 def file_len(fname):
     """ Returns number of lines in the file
