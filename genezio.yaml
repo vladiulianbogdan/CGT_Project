@@ -1,0 +1,10 @@
+frontend:
+    path: ./
+    publish: ""
+    scripts:
+        build: npm run build
+        deploy: npm install
+    subdomain: CGT-Project
+name: CGT-Project
+region: us-east-1
+yamlVersion: 2
